@@ -2,5 +2,6 @@ Makefile.local
 libsimpulse.so
 cython/simpulse.so
 cython/simpulse.cpp
+visual_check/plot*.png
 *.o
 *~
