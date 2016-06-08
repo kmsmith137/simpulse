@@ -1,0 +1,6 @@
+Makefile.local
+libsimpulse.so
+cython/simpulse.so
+cython/simpulse.cpp
+*.o
+*~
