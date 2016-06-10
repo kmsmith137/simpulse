@@ -96,6 +96,9 @@ struct single_pulse {
     // The 'out' arg is a 2d array with shape (nfreq, out_nt).
     // The 'stride' is the pointer offset between frequencies.  If stride=0 then it defaults to out_nt.
     //
+    // The frequencies are assumed ordered from lowest to highest, but the opposite ordering (used e.g.
+    // in bonsai) can be obtained by using a negative stride.
+    //
     template<typename T> void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0) const;
     
     //

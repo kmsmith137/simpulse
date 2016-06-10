@@ -274,7 +274,7 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
     simpulse_assert(out);
     simpulse_assert(out_nt > 0);
     simpulse_assert(out_t0 < out_t1);
-    simpulse_assert(stride >= out_nt);
+    simpulse_assert(abs(stride) >= out_nt);   // allow negative stride as explained in simpulse.hpp
     
     // Return early if data does not overlap pulse
     if (out_t0 > undispersed_arrival_time + max_t1)
