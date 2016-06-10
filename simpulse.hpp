@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 namespace simpulse {
 #if 0
