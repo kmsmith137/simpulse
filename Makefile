@@ -25,7 +25,7 @@ clean:
 	$(CPP) -c -o $@ $<
 
 libsimpulse.so: single_pulse.o
-	$(CPP) -o $@ -shared $^ $(LIBS) -lfftw3
+	$(CPP) -o $@ -shared $^ -lfftw3
 
 cython/simpulse.cpp: cython/simpulse.pyx cython/simpulse_pxd.pxd cython/simpulse_cython.hpp simpulse.hpp
 	cython --cplus $<
