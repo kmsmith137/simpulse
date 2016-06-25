@@ -2,7 +2,11 @@
 #   LIBDIR      install dir for C++ libraries
 #   INCDIR      install dir for C++ headers
 #   PYDIR       install dir for python/cython modules
-#   CPP         g++ compiler command line
+#   CPP         C++ compiler command line
+#
+# Some optional variables which I only use for osx/clang:
+#   CPP_LFLAGS      extra linker flags when creating a .so or executable file from .o files
+#   LIBS_PYMODULE   any extra libraries needed to link a python extension module (osx needs -lPython)
 #
 # See site/Makefile.local.* for examples.
 
@@ -25,10 +29,10 @@ clean:
 	$(CPP) -c -o $@ $<
 
 libsimpulse.so: single_pulse.o
-	$(CPP) -o $@ -shared $^ -lfftw3
+	$(CPP) $(CPP_LFLAGS) -o $@ -shared $^ -lfftw3
 
 cython/simpulse.cpp: cython/simpulse.pyx cython/simpulse_pxd.pxd cython/simpulse_cython.hpp simpulse.hpp
 	cython --cplus $<
 
 cython/simpulse.so: cython/simpulse.cpp libsimpulse.so
-	$(CPP) -shared -o $@ $< -lsimpulse
+	$(CPP) $(CPP_LFLAGS) -Wno-unused-function -shared -o $@ $< -lsimpulse $(LIBS_PYMODULE)
