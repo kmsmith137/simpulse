@@ -120,6 +120,9 @@ cdef class single_pulse:
         This routine adds the pulse to a "block" of (frequency, time) samples.
         It is sometimes called incrementally, as a stream of blocks generated.
         The 'out' arg is a 2d array with shape (nfreq, out_nt).
+    	
+    	The frequencies are assumed ordered from lowest to highest.
+    	WARNING: this is the opposite of the ordering used in rf_pipelines and bonsai!!
         
         The 'out_t0' and 'out_t1' args are the endpoints of the sampled region, in seconds relative 
         to the same origin as the undispersed_arrival_time.
