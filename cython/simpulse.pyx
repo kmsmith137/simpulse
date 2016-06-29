@@ -102,7 +102,10 @@ cdef class single_pulse:
 
 
     def get_endpoints(self):
-        """get_endpoints(self) -> pair (t0,t1)"""
+        """
+        Returns a pair (t0,t1): earliest and latest arrival times in the band [freq_lo_MHz, freq_hi_MHz].
+        (Note that both of these will be larger than single_pulse::undispersed_arrival_time, unless the intrinsic width is very large).
+	"""
         cdef double t0 = 0.0
         cdef double t1 = 0.0
         self.p.get_endpoints(t0, t1)

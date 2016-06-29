@@ -84,6 +84,9 @@ struct single_pulse {
     void set_fluence(double fluence);
     void set_spectral_index(double spectral_index);
     void set_undispersed_arrival_time(double undispersed_arrival_time);
+
+    // Returns the earliest and latest arrival times in the band [freq_lo_MHz, freq_hi_MHz].
+    // (Note that both of these will be larger than single_pulse::undispersed_arrival_time, unless the intrinsic width is very large).
     void get_endpoints(double &t0, double &t1) const;
 
     //
