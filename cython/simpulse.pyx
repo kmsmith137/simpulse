@@ -118,41 +118,38 @@ cdef class single_pulse:
         It is sometimes called incrementally, as a stream of blocks generated.
         The 'out' arg is a 2d array with shape (nfreq, out_nt).
     	
-	By default, the frequencies are assumed ordered from lowest to highest (freq_hi_to_lo=False).
-    	WARNING: this is the opposite of the ordering used in rf_pipelines and bonsai!!
-	To get the highest-to-lowest ordering, set freq_hi_to_lo=True.
-        
         The 'out_t0' and 'out_t1' args are the endpoints of the sampled region, in seconds relative 
         to the same origin as the undispersed_arrival_time.
+
+	By default, the frequencies are assumed ordered from lowest to highest.
+    	WARNING: this ordering is used throughout 'simpulse', but the opposite ordering is used in rf_pipelines and bonsai!!
+	To get the opposite ordering (highest-to-lowest), set freq_hi_to_lo=True.
         """
 
         if (out.ndim != 2) or (out.shape[0] != self.p.nfreq):
             raise RuntimeError('single_pulse.add_to_timestream(): array has wrong shape')
 
+        if (out.strides[1] != out.itemsize):
+            raise RuntimeError('single_pulse.add_to_timestream(): currenly there is a limitation that the time samples have to be consecutive in memory (FIXME)')
+        if (out.strides[0] % out.itemsize) != 0:
+            raise RuntimeError("single_pulse.add_to_timestream(): outer stride of array is not divisible by itemsize, not sure what's going on?!")
+
+        offset = ((out.strides[0]//out.itemsize) * (self.p.nfreq-1)) if freq_hi_to_lo else 0
+        stride = -(out.strides[0]//out.itemsize) if freq_hi_to_lo else (out.strides[0]//out.itemsize)
+
         if out.dtype == np.float32:
-            self._add_to_timestream_float(out, out_t0, out_t1, freq_hi_to_lo)
+            self._add_to_timestream_float(out, out_t0, out_t1, offset, stride)
         elif out.dtype == np.float64:
-            self._add_to_timestream_double(out, out_t0, out_t1, freq_hi_to_lo)
+            self._add_to_timestream_double(out, out_t0, out_t1, offset, stride)
         else:
             raise RuntimeError('single_pulse.add_to_timestream(): array has wrong type (expected float32 or float64)')
 
 
-    def _add_to_timestream_float(self, np.ndarray[float,ndim=2,mode='c'] out not None, out_t0, out_t1, freq_hi_to_lo):
-        """Helper for add_to_timestream()."""
+    def _add_to_timestream_float(self, np.ndarray[float,ndim=2] out not None, out_t0, out_t1, int offset, stride):
+        simpulse_pxd._add_to_timestream_float(self.p, (<float *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
 
-        if freq_hi_to_lo:
-            simpulse_pxd._add_to_timestream_float(self.p, <float *> &out[self.p.nfreq-1,0], out_t0, out_t1, out.shape[1], -out.shape[1])
-        else:
-            simpulse_pxd._add_to_timestream_float(self.p, <float *> &out[0,0], out_t0, out_t1, out.shape[1], out.shape[1])
-
-
-    def _add_to_timestream_double(self, np.ndarray[double,ndim=2,mode='c'] out not None, out_t0, out_t1, freq_hi_to_lo):
-        """Helper for add_to_timestream()."""
-
-        if freq_hi_to_lo:
-            simpulse_pxd._add_to_timestream_double(self.p, <double *> &out[self.p.nfreq-1,0], out_t0, out_t1, out.shape[1], -out.shape[1])
-        else:
-            simpulse_pxd._add_to_timestream_double(self.p, <double *> &out[0,0], out_t0, out_t1, out.shape[1], out.shape[1])
+    def _add_to_timestream_double(self, np.ndarray[double,ndim=2] out not None, out_t0, out_t1, int offset, stride):
+        simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
 
 
     def get_signal_to_noise(self, sample_dt, sample_t0=0.0, sample_rms=1.0):
