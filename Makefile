@@ -15,6 +15,7 @@ include Makefile.local
 all: libsimpulse.so cython/simpulse.so
 
 install: libsimpulse.so cython/simpulse.so
+	mkdir -p $(INCDIR) $(LIBDIR) $(PYDIR)
 	cp -f simpulse.hpp $(INCDIR)/
 	cp -f libsimpulse.so $(LIBDIR)/
 	cp -f cython/simpulse.so $(PYDIR)/

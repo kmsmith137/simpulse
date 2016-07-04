@@ -11,12 +11,15 @@ INCDIR=$(HOME)/include
 PYDIR=$(HOME)/lib/python2.7/site-packages
 
 # Read-only location of python header files, needed for cython
+# Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc()
 PYTHON_INCDIR=/usr/include/python2.7
+
+# Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
 NUMPY_INCDIR=/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include
 
 # C++ command line
 # Must support c++11
-CPP=clang -std=c++11 -Wall -O3 -march=native -ffast-math -funroll-loops -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR)
+CPP=clang -std=c++11 -Wall -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR)
 
 # Extra linker flags when creating a shared library or exectutable from .o files
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
