@@ -32,13 +32,21 @@ namespace simpulse {
 #endif
 
 
+// Catering to old versions of gcc
+template<typename T> inline string xto_string(const T &x)
+{
+    stringstream ss;
+    ss << x;
+    return ss.str();
+}
+
 template<typename T> inline T *checked_fftw_malloc(size_t nelts)
 {
     size_t nbytes = nelts * sizeof(T);
 
     void *ret = fftw_malloc(nbytes);
     if (!ret)
-	throw runtime_error("fftw_malloc couldn't allocate " + to_string(nbytes) + " bytes");
+	throw runtime_error("fftw_malloc couldn't allocate " + xto_string(nbytes) + " bytes");
 
     memset(ret, 0, nbytes);
     return reinterpret_cast<T *> (ret);
@@ -178,7 +186,7 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 void single_pulse::_compute_freq_wt()
 {
     if ((spectral_index < -20.1) || (spectral_index > 20.1))
-	throw runtime_error("single_pulse::spectral_index set to 'extreme' value " + to_string(spectral_index) + ", this is currently disallowed");
+	throw runtime_error("single_pulse::spectral_index set to 'extreme' value " + xto_string(spectral_index) + ", this is currently disallowed");
 
     double nu0 = (freq_lo_MHz + freq_hi_MHz) / 2.0;
 
