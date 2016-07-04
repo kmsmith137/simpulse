@@ -12,6 +12,26 @@
 
 include Makefile.local
 
+ifndef CPP
+$(error Fatal: Makefile.local must define CPP variable)
+endif
+
+ifndef INCDIR
+$(error Fatal: Makefile.local must define INCDIR variable)
+endif
+
+ifndef LIBDIR
+$(error Fatal: Makefile.local must define LIBDIR variable)
+endif
+
+ifndef PYDIR
+$(error Fatal: Makefile.local must define PYDIR variable)
+endif
+
+
+####################################################################################################
+
+
 all: libsimpulse.so cython/simpulse.so
 
 install: libsimpulse.so cython/simpulse.so
