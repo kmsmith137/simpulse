@@ -44,7 +44,7 @@ uninstall:
 	rm -f $(INCDIR)/simpulse.hpp $(LIBDIR)/libsimpulse.so $(PYDIR)/simpulse.so
 
 clean:
-	rm -f *~ *.o *.so cython/*~ cython/*.so cython/simpulse.cpp visual_check/*~ visual_check/plot*.png
+	rm -f *~ *.o *.so cython/*~ cython/*.so cython/simpulse.cpp visual_check/*~ visual_check/plot*.png site/*~
 
 %.o: %.cpp simpulse.hpp
 	$(CPP) -c -o $@ $<
