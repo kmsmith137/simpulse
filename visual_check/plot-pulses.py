@@ -26,7 +26,7 @@ def make_plot(sp, ifreq_list, color_list, label_list, filename):
     # loop over various plot types, e.g., with(out) labels
     for (plot_nt, ls, lflag) in [ (100,'-',True), (1000,':',False) ]:
         
-        # make a empty array of (freq, time)
+        # make an empty array of (freq, time)
         ts = np.zeros((sp.nfreq, plot_nt))
         
         # add the pulse to the array, constrained by the end points
@@ -58,7 +58,7 @@ def make_plot(sp, ifreq_list, color_list, label_list, filename):
                 plt.plot(x, y, color=color, ls=ls, label=label)
             else:
                 plt.plot(x, y, color=color, ls=ls)
-    
+
     plt.legend(loc='upper right').draw_frame(False)
     plt.savefig(filename)
     plt.clf()
@@ -94,7 +94,6 @@ def plot1():
               label_list = [ '1 GHz', '1.5 GHz', '2.0 GHz' ],
               filename = 'plot1.png')
 
-
 def plot2():
     """Boxcars labeled by time intervals"""
     
@@ -116,7 +115,6 @@ def plot2():
               color_list = ['r', 'b', 'm', 'k'],
               label_list = [ '131.8-141.5', '116.8-120.3', '114.1-116.8', '110.4-112.0' ],
               filename = 'plot2.png')
-
 
 def plot3():
     """
@@ -142,7 +140,6 @@ def plot3():
               color_list = ['r', 'b', 'm'],
               label_list = [ '1 GHz', '1.5 GHz', '2.0 GHz' ],
               filename = 'plot3.png')
-
 
 plot1()
 plot2()
