@@ -10,10 +10,10 @@ scattered pulse. In the future I may add more features (e.g. pulsars and scintil
     - Cython
     - FFTW3 (http://fftw.org)
 
-- Create a file Makefile.local defining a few Makefile variables (see brief 
-  description in Makefile, or one of the examples in site/)
+- Create a file `Makefile.local` defining a few Makefile variables (see brief 
+  description in `Makefile`, or one of the examples in `site/`)
   
-- Do 'make all install'
+- Do `make all install`
 
 - You can make a few example plots with
 ```
