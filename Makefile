@@ -36,17 +36,17 @@ all: libsimpulse.so cython/simpulse.so
 
 install: libsimpulse.so cython/simpulse.so
 	mkdir -p $(INCDIR) $(LIBDIR) $(PYDIR)
-	cp -f simpulse.hpp $(INCDIR)/
+	cp -f simpulse.hpp simpulse_internals.hpp $(INCDIR)/
 	cp -f libsimpulse.so $(LIBDIR)/
 	cp -f cython/simpulse.so $(PYDIR)/
 
 uninstall:
-	rm -f $(INCDIR)/simpulse.hpp $(LIBDIR)/libsimpulse.so $(PYDIR)/simpulse.so
+	rm -f $(INCDIR)/simpulse.hpp $(INCDIR)/simpulse_internals.hpp $(LIBDIR)/libsimpulse.so $(PYDIR)/simpulse.so
 
 clean:
 	rm -f *~ *.o *.so cython/*~ cython/*.so cython/simpulse.cpp visual_check/*~ visual_check/plot*.png site/*~
 
-%.o: %.cpp simpulse.hpp
+%.o: %.cpp simpulse.hpp simpulse_internals.hpp
 	$(CPP) -c -o $@ $<
 
 libsimpulse.so: single_pulse.o
