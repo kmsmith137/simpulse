@@ -5,6 +5,13 @@
 #error "This source file needs to be compiled with C++0x support (g++ -std=c++0x)"
 #endif
 
+#include <cmath>
+#include <cstring>
+#include <complex>
+#include <sstream>
+#include <stdexcept>
+#include <fftw3.h>
+
 #include "simpulse.hpp"
 
 

@@ -1,10 +1,3 @@
-#include <cmath>
-#include <cstring>
-#include <complex>
-#include <sstream>
-#include <stdexcept>
-
-#include <fftw3.h>
 #include "simpulse_internals.hpp"
 
 using namespace std;
