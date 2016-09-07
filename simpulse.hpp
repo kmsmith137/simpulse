@@ -165,7 +165,13 @@ struct von_mises_profile {
     // Note: 'out' is an array of length nt, but 'phi' is an array of length (nt+1).
     // The i-th sample is assumed to span phase range (phi[i], phi[i+1]).
     // This routine is pretty fast (~5e7 samples/sec on my laptop) but could be vectorized to run faster.
+    // The amplitude has units of intensity.
     void eval(int nt, double *out, const double *phi, bool detrend, double amplitude=1.0) const;
+
+    // Returns the amplitude which corresponds to a given signal-to-noise ratio.
+    // The returned amplitude is not exact (e.g. it doesn't account for boundary effects) but it normally be quite accurate.
+    // 'eta' is a noise parameter with units intensity^2-time.
+    double amplitude_from_snr(double snr, double omega, double dt, double T, bool detrend, double eta=1.0) const;
 };
 
 
