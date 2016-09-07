@@ -37,9 +37,13 @@ inline double scattering_time(double sm, double freq_MHz)
     return 1.0e-3 * sm / pow(freq_MHz/1000.0, 4.4);
 }
 
+
+// -------------------------------------------------------------------------------------------------
 //
 // struct single_pulse: represents one dispersed, scattered pulse, in a fixed frequency channelization.
 //
+
+
 struct single_pulse {
     int     pulse_nt;          // number of samples used "under the hood" to represent pulse (1024 is usually a good default)
     int     nfreq;             // number of frequency channels, assumed equally spaced
@@ -131,6 +135,31 @@ struct single_pulse {
 
 
 inline std::ostream &operator<<(std::ostream &os, const single_pulse &sp) { sp.print(os); return os; }
+
+
+// -------------------------------------------------------------------------------------------------
+//
+// Pulsar stuff
+
+
+// For now, the only pulse_profile we consider is the von Mises profile.
+// We define the duty cycle to be (pulse FWHM) / (pulse period).
+struct von_mises_profile {
+    double duty_cycle = 0.0;
+    int nphi = 0;
+    int nphi2 = 0;   // = nphi/2+1
+
+    std::vector<double> profile_fft;      // length nphi2, normalized to profile_fft[0]=1.
+    std::vector<double> profile_antider;  // padded to length (nphi+1)
+
+    // If min_nphi=0, then a reasonable default will be chosen (recommended).
+    von_mises_profile(double duty_cycle, int min_nphi=0);
+
+    // Note: 'out' is an array of length nt, but 'phi' is an array of length (nt+1).
+    // The i-th sample is assumed to span phase range (phi[i], phi[i+1]).
+    // This routine is pretty fast (~5e7 samples/sec on my laptop) but could be vectorized to run faster.
+    void eval(int nt, double *out, const double *phi, bool detrend, double amplitude=1.0) const;
+};
 
 
 }  // namespace simpulse
