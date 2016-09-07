@@ -142,6 +142,13 @@ inline std::ostream &operator<<(std::ostream &os, const single_pulse &sp) { sp.p
 // Pulsar stuff
 
 
+struct phase_model {
+    virtual void eval_phi(int nt, double *phi_out, const double *t_in) const = 0;
+
+    static std::shared_ptr<phase_model> make_constant_pdot(double phi0, double omega0, double omega_dot, double t0=0.0);
+};
+
+
 // For now, the only pulse_profile we consider is the von Mises profile.
 // We define the duty cycle to be (pulse FWHM) / (pulse period).
 struct von_mises_profile {
