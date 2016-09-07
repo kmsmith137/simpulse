@@ -134,16 +134,16 @@ void von_mises_profile::eval(int nt, double *out, const double *phi, bool detren
 }
 
 
-double von_mises_profile::amplitude_from_snr(double snr, double omega, double dt, double T, bool detrend, double eta) const
+double von_mises_profile::amplitude_from_snr(double snr, double omega, double tsamp, double T, bool detrend, double eta) const
 {
-    double dphi = omega * dt;
+    double dphi = omega * tsamp;
 
     // var = <I^2> 
     double var = detrend ? square(profile_fft[0]) : 0.0;
     for (int n = 1; n < nphi2; n++)
 	var += 2.0 * square(profile_fft[n] * bessj0(n*dphi/2.));
 
-    return snr * sqrt(eta) / sqrt(T) / sqrt(var);
+    return snr * eta / sqrt(T) / sqrt(var);
 }
 
 
