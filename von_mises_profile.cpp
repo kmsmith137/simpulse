@@ -76,6 +76,22 @@ von_mises_profile::von_mises_profile(double duty_cycle_, int min_nphi)
 
     simpulse_assert(fabs(profile_antider[nphi] - 2*M_PI) < 1.0e-12);
     simpulse_assert(fabs(profile_fft[0] - 1.0) < 1.0e-12);
+
+    // Convervative cutoff (pulsar frequency must be sub-Nyquist)
+    this->ntab_xmax = M_PI + 1.0e-9;
+
+    // Also a conservative choice
+    this->ntab_size = round_up(16. / duty_cycle);
+    this->ntab.resize(ntab_size, 0.0);
+
+    for (int ix = 0; ix < ntab_size; ix++) {
+	double x = ix * ntab_xmax / double(ntab_size-1);
+
+	for (int n = 1; n < nphi2; n++) {
+	    double w = (2*n == nphi) ? 1.0 : 2.0;
+	    ntab[ix] += w * square(profile_fft[n] * bessj0(n*x/2.));
+	}
+    }
 }
     
 
@@ -134,16 +150,24 @@ void von_mises_profile::eval(int nt, double *out, const double *phi, bool detren
 }
 
 
-double von_mises_profile::amplitude_from_snr(double snr, double omega, double tsamp, double T, bool detrend, double eta) const
+double von_mises_profile::get_normalization(double eta, double omega, double tsamp, double T, bool detrend) const
 {
-    double dphi = omega * tsamp;
+    double n0 = detrend ? 0.0 : 1.0;
+    double x = omega * tsamp;
+    double y = x / ntab_xmax * (ntab_size-1);
+    
+    if ((y < 0) || (y > ntab_size-1))
+	throw runtime_error("von_mises_profile::get_normalization: product omega*tsamp is negative or too large");
+    
+    int iy = int(y);
 
-    // var = <I^2> 
-    double var = detrend ? square(profile_fft[0]) : 0.0;
-    for (int n = 1; n < nphi2; n++)
-	var += 2.0 * square(profile_fft[n] * bessj0(n*dphi/2.));
+    // just being paranoid
+    iy = max(iy,0);
+    iy = min(iy,ntab_size-2);
 
-    return snr * eta / sqrt(T) / sqrt(var);
+    double t = y - double(iy);
+    double n_interp = (1-t)*ntab[iy] + t*ntab[iy+1];
+    return eta / sqrt(T * (n_interp + n0));
 }
 
 

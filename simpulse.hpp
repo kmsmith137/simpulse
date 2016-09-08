@@ -159,6 +159,11 @@ struct von_mises_profile {
     std::vector<double> profile_fft;      // length nphi2, normalized to profile_fft[0]=1.
     std::vector<double> profile_antider;  // padded to length (nphi+1)
 
+    // An interpolation used to store the function N(x) = \sum_{n\ne 0} | rho_n j_0(nx/2) |^2 as a function of x.
+    std::vector<double> ntab;
+    double ntab_xmax;
+    int ntab_size;
+
     // If min_nphi=0, then a reasonable default will be chosen (recommended).
     von_mises_profile(double duty_cycle, int min_nphi=0);
 
@@ -169,18 +174,22 @@ struct von_mises_profile {
     void eval(int nt, double *out, const double *phi, bool detrend, double amplitude=1.0) const;
 
     //
-    // Returns the amplitude which corresponds to a given signal-to-noise ratio.
-    // The returned amplitude is not exact (e.g. it doesn't account for boundary effects) but 
-    // it should normally be quite accurate.
+    // Returns the amplitude which gives signal-to-noise ratio 1.  Strictly speaking, the returned
+    // amplitude is an approximation which is accurate in the limit where the observation contains
+    // many pulse periods, and the pulse frequency doesn't change much over the observation.
     //
     //    eta = a noise parameter with units intensity-time^(1/2)
+    //    omega = angular pulse frequency
     //    tsamp = timestream sample length
     //    T = total timestream length
     //
     // Note that 'omega' and 'tsamp' are only used for determining the finite-sample correction.
     // This correction can be disabled by either setting omega=0 or tsamp=0.
     //
-    double amplitude_from_snr(double snr, double omega, double tsamp, double T, bool detrend, double eta=1.0) const;
+    // FIXME: it may be convenient later to implement a vectorized version which evaluates
+    // on a grid of omega values.
+    //
+    double get_normalization(double eta, double omega, double tsamp, double T, bool detrend) const;
 };
 
 
