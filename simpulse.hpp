@@ -168,10 +168,18 @@ struct von_mises_profile {
     // The amplitude has units of intensity.
     void eval(int nt, double *out, const double *phi, bool detrend, double amplitude=1.0) const;
 
+    //
     // Returns the amplitude which corresponds to a given signal-to-noise ratio.
-    // The returned amplitude is not exact (e.g. it doesn't account for boundary effects) but it should normally be quite accurate.
-    // 'eta' is a noise parameter with units intensity-time^(1/2).
-    // 'tsamp' is the sample length, and 'T' is the total timestream length.
+    // The returned amplitude is not exact (e.g. it doesn't account for boundary effects) but 
+    // it should normally be quite accurate.
+    //
+    //    eta = a noise parameter with units intensity-time^(1/2)
+    //    tsamp = timestream sample length
+    //    T = total timestream length
+    //
+    // Note that 'omega' and 'tsamp' are only used for determining the finite-sample correction.
+    // This correction can be disabled by either setting omega=0 or tsamp=0.
+    //
     double amplitude_from_snr(double snr, double omega, double tsamp, double T, bool detrend, double eta=1.0) const;
 };
 
