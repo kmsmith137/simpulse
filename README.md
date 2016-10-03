@@ -7,8 +7,8 @@ scattered pulse. In the future I may add more features (e.g. pulsars and scintil
 
 - You'll need the following prerequisites.
     - C++ compiler which supports C++11
-    - Cython
-    - FFTW3 (http://fftw.org)
+    - Cython (installation hint: `pip install Cython`)
+    - FFTW3 (installation hint: `sudo yum install fftw-devel` or `brew install fftw`)
 
 - Create a file `Makefile.local` defining a few Makefile variables (see brief 
   description in `Makefile`, or one of the examples in `site/`)

@@ -29,10 +29,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, int min_nphi)
     if (min_nphi > 65536)
 	throw runtime_error("simpulse::von_mises_profile constructor: we currently don't support nphi >= 65536");
 
-    // This value gives a pulse profile which is 99.6% correlated with the nphi->infty limit.
-    int default_nphi = round_up(4./duty_cycle);
-
-    this->nphi = max(default_nphi, min_nphi);
+    this->nphi = max(default_nphi(duty_cycle), min_nphi);
     this->nphi2 = nphi/2 + 1;
     this->profile_fft.resize(nphi2, 0.0);
     this->profile_antider.resize(nphi+1, 0.0);
@@ -168,6 +165,21 @@ double von_mises_profile::get_normalization(double eta, double omega, double tsa
     double t = y - double(iy);
     double n_interp = (1-t)*ntab[iy] + t*ntab[iy+1];
     return eta / sqrt(T * (n_interp + n0));
+}
+
+
+// static member function
+int von_mises_profile::default_nphi(double duty_cycle)
+{
+    if ((duty_cycle <= 0) || (duty_cycle > 0.5))
+	throw runtime_error("von_mises_profile::default_nphi(): invalid duty cycle");
+    
+    // See comment in constructor
+    if (duty_cycle < 1.0e-4)
+	throw runtime_error("simpulse::von_mises_profile constructor: we currently don't support duty cycles < 1.0e-4");
+
+    // This value gives a pulse profile which is 99.6% correlated with the nphi->infty limit.
+    return round_up(4./duty_cycle);
 }
 
 

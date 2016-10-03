@@ -190,6 +190,8 @@ struct von_mises_profile {
     // on a grid of omega values.
     //
     double get_normalization(double eta, double omega, double tsamp, double T, bool detrend) const;
+
+    static int default_nphi(double duty_cycle);
 };
 
 
