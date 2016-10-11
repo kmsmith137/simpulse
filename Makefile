@@ -49,7 +49,7 @@ clean:
 %.o: %.cpp simpulse.hpp simpulse_internals.hpp
 	$(CPP) -c -o $@ $<
 
-libsimpulse.so: constant_pdot_phase_model.o single_pulse.o von_mises_profile.o
+libsimpulse.so: constant_acceleration_phase_model.o single_pulse.o von_mises_profile.o
 	$(CPP) $(CPP_LFLAGS) -o $@ -shared $^ -lfftw3
 
 cython/simpulse.cpp: cython/simpulse.pyx cython/simpulse_pxd.pxd cython/simpulse_cython.hpp simpulse.hpp

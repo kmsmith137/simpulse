@@ -157,7 +157,7 @@ struct phase_model {
     // Vectorized version of eval_phi()
     virtual void eval_phi(int nt, double *phi_out, const double *t_in) const = 0;
 
-    static std::shared_ptr<phase_model> make_constant_pdot(double phi0, double omega0, double omega_dot, double t0=0.0);
+    static std::shared_ptr<phase_model> make_constant_acceleration(double phi0, double omega0, double omega_dot, double t0=0.0);
 };
 
 

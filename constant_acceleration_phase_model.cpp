@@ -9,17 +9,17 @@ namespace simpulse {
 #endif
 
 
-struct constant_pdot_phase_model : public phase_model {
+struct constant_acceleration_phase_model : public phase_model {
     double phi0 = 0.0;
     double omega0 = 0.0;
     double omega_dot = 0.0;
     double t0 = 0.0;
 
-    constant_pdot_phase_model(double phi0_, double omega0_, double omega_dot_, double t0_)
+    constant_acceleration_phase_model(double phi0_, double omega0_, double omega_dot_, double t0_)
         : phi0(phi0_), omega0(omega0_), omega_dot(omega_dot_), t0(t0_)
     {
 	if (omega0 <= 0.0)
-            throw std::runtime_error("simpulse::constant_pdot_phase_model constructor: expected omega0 > 0");
+            throw std::runtime_error("simpulse::constant_acceleration_phase_model constructor: expected omega0 > 0");
     }
 
     virtual double eval_phi(double t) const override
@@ -68,9 +68,9 @@ struct constant_pdot_phase_model : public phase_model {
 
 
 // static member function
-shared_ptr<phase_model> phase_model::make_constant_pdot(double phi0, double omega0, double omega_dot, double t0)
+shared_ptr<phase_model> phase_model::make_constant_acceleration(double phi0, double omega0, double omega_dot, double t0)
 {
-    return make_shared<constant_pdot_phase_model> (phi0, omega0, omega_dot, t0);
+    return make_shared<constant_acceleration_phase_model> (phi0, omega0, omega_dot, t0);
 }
 
 
