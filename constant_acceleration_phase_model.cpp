@@ -22,15 +22,20 @@ struct constant_acceleration_phase_model : public phase_model {
             throw std::runtime_error("simpulse::constant_acceleration_phase_model constructor: expected omega0 > 0");
     }
 
-    virtual double eval_phi(double t) const override
+    virtual double eval(double t, int nderivs) const override
     {
 	t -= t0;
-	return phi0 + omega0*t + 0.5*omega_dot*t*t;
-    }
 
-    virtual double eval_omega(double t) const override
-    {
-	return omega0 + omega_dot*(t-t0);
+	if (nderivs == 0)
+	    return phi0 + omega0*t + omega_dot*t*t/2.;
+	if (nderivs == 1)
+	    return omega0 + omega_dot*t;
+	if (nderivs == 2)
+	    return omega_dot;
+	if (nderivs < 0)
+	    throw runtime_error("simpulse::phase_model::eval() was called with negative 'nderivs'");
+
+	return 0.0;
     }
 
     virtual double eval_mean_phi(double t1, double t2) const override
@@ -38,20 +43,6 @@ struct constant_acceleration_phase_model : public phase_model {
 	double tmid = (t1+t2)/2. - t0;
 	double dt = t2-t1;
 	return phi0 + omega0*tmid + omega_dot*tmid*tmid/2. + omega_dot*dt*dt/24.;
-    }
-
-    virtual void eval_phi_derivs(int nout, double *out, double t) const override
-    {
-	t -= t0;
-
-	if (nout > 0)
-	    out[0] = phi0 + omega0*t + omega_dot*t*t/2.;
-	if (nout > 1)
-	    out[1] = omega0 + omega_dot*t;
-	if (nout > 2)
-	    out[2] = omega_dot;
-	for (int i = 3; i < nout; i++)
-	    out[i] = 0.0;
     }
 
     virtual void eval_phi(int nt, double *phi_out, const double *t_in) const override
