@@ -144,6 +144,17 @@ inline std::ostream &operator<<(std::ostream &os, const single_pulse &sp) { sp.p
 
 
 struct phase_model {
+    virtual double eval_phi(double t) const = 0;
+    virtual double eval_omega(double t) const = 0;
+
+    // Returns mean phi over a given range.
+    virtual double eval_mean_phi(double t1, double t2) const = 0;
+
+    // Writes out[i] = (d/dt)^i phi, for 0 <= i < nout.
+    // Note that out[0] and out[1] are given by eval_phi() and eval_omega() respectively.
+    virtual void eval_phi_derivs(int nout, double *out, double t) const = 0;
+
+    // Vectorized version of eval_phi()
     virtual void eval_phi(int nt, double *phi_out, const double *t_in) const = 0;
 
     static std::shared_ptr<phase_model> make_constant_pdot(double phi0, double omega0, double omega_dot, double t0=0.0);
