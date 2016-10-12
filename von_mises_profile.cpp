@@ -178,8 +178,9 @@ int von_mises_profile::default_nphi(double duty_cycle)
     if (duty_cycle < 1.0e-4)
 	throw runtime_error("simpulse::von_mises_profile constructor: we currently don't support duty cycles < 1.0e-4");
 
-    // This value gives a pulse profile which is 99.6% correlated with the nphi->infty limit.
-    return round_up(4./duty_cycle);
+    // Ultra-conservative value
+    // FIXME I'd like to understand better how to choose this
+    return round_up(30./duty_cycle);
 }
 
 
