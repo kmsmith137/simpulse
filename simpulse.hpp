@@ -121,6 +121,10 @@ struct single_pulse {
     //
     double get_signal_to_noise(double sample_dt, double sample_t0=0.0, double sample_rms=1.0) const;
 
+    // Here is a version of get_signal_to_noise() which takes a length-nfreq array of noise rms values
+    // Note that the arguments are permuted relative to the previous version!
+    double get_signal_to_noise(const double *sample_rms, double sample_dt, double sample_t0) const;
+
     // String representation
     void print(std::ostream &os) const;
     std::string str() const;

@@ -258,6 +258,44 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_t0, dou
 }
 
 
+double single_pulse::get_signal_to_noise(const double *sample_rms, double sample_dt, double sample_t0) const
+{
+    if (sample_rms == nullptr)
+	throw runtime_error("simpulse: null 'sample_rms' pointer in single_pulse::get_signal_to_noise()");
+    if (sample_dt <= 0.0)
+	throw runtime_error("simpulse: 'sample_dt' was zero or negative in single_pulse::get_signal_to_noise()");
+
+    int nsamp_max = (int)(max_dt/sample_dt) + 3;
+    vector<double> buf(nsamp_max, 0.0);
+
+    double acc = 0.0;
+
+    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+	if (sample_rms[ifreq] <= 0.0)
+	    throw runtime_error("simpulse: all elements of the 'sample_rms' array must be positive");
+
+	// Range of samples spanned by pulse
+	double s0 = (undispersed_arrival_time + pulse_t0[ifreq] - sample_t0) / sample_dt;
+	double s1 = (undispersed_arrival_time + pulse_t1[ifreq] - sample_t0) / sample_dt;
+
+	int j = round_down(s0);
+	int k = round_up(s1);
+	simpulse_assert(k-j <= nsamp_max);
+
+	memset(&buf[0], 0, nsamp_max * sizeof(double));
+	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq);
+
+	double acc2 = 0.0;
+	for (int i = 0; i < k-j; i++)
+	    acc2 += buf[i]*buf[i];
+	
+	acc += acc2 / (sample_rms[ifreq] * sample_rms[ifreq]);
+    }
+
+    return sqrt(acc);
+}
+
+
 void single_pulse::print(ostream &os) const
 {
     os << "single_pulse(pulse_nt=" << pulse_nt << ",nfreq=" << nfreq << ",freq_lo_MHz=" << freq_lo_MHz << ",freq_hi_MHz=" << freq_hi_MHz
