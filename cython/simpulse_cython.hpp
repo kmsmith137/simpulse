@@ -5,6 +5,16 @@ namespace simpulse {
 }; // pacify emacs c-mode
 #endif
 
+inline double _get_signal_to_noise_scalar(simpulse::single_pulse *sp, double sample_dt, double sample_t0, double sample_rms)
+{
+    return sp->get_signal_to_noise(sample_dt, sample_t0, sample_rms);
+}
+
+inline double _get_signal_to_noise_vector(simpulse::single_pulse *sp, const double *sample_rms, double sample_dt, double sample_t0)
+{
+    return sp->get_signal_to_noise(sample_rms, sample_dt, sample_t0);
+}
+
 inline void _add_to_timestream_float(simpulse::single_pulse *sp, float *out, double out_t0, double out_t1, int out_nt, int stride)
 {
     sp->add_to_timestream(out, out_t0, out_t1, out_nt, stride);

@@ -159,8 +159,31 @@ cdef class single_pulse:
             Returns total signal-to-noise for all frequency channels and time samples combined.
             The signal-to-noise of a sampled pulse depends on 'sample_dt', the length of a sample in seconds.
 
+            The sample_rms argument is the RMS noise per sample.  This parameter can either be a scalar (if
+            all frequency channels have the same noise level) or a 1D array of length 'nfreq'.
+
             In principle, it also depends on 'sample_t0', the starting time of an arbitrarily chosen sample,
             although this dependence will be weak in realistic cases!
         """
 
-        return self.p.get_signal_to_noise(sample_dt, sample_t0, sample_rms)
+        sample_rms = np.array(sample_rms)
+
+        if sample_rms.ndim == 0:
+            return simpulse_pxd._get_signal_to_noise_scalar(self.p, sample_dt, sample_t0, sample_rms)
+
+        if sample_rms.shape == (self.p.nfreq,):
+            # FIXME what's the best way to ensure an array is contiguous in cython?
+            sample_rms2 = np.array(sample_rms, dtype=np.float64)
+            sample_rms2 = np.copy(sample_rms2, order='C')
+            return self._get_signal_to_noise_vector(sample_rms2, sample_dt, sample_t0)
+
+        raise RuntimeError("simpulse.single_pulse.get_signal_to_noise(): the 'sample_rms' argument must be either a scalar, or a 1D array of length nfreq=%d (actual shape: %s)"
+                           % (self.p.nfreq, sample_rms.shape))
+
+
+    def _get_signal_to_noise_vector(self, np.ndarray[double,ndim=1] sample_rms not None, sample_dt, sample_t0):
+        assert (sample_rms.ndim == 1) and (sample_rms.shape[0] == self.p.nfreq)
+        assert sample_rms.flags['C_CONTIGUOUS']
+
+        return simpulse_pxd._get_signal_to_noise_vector(self.p, <double *> &sample_rms[0], sample_dt, sample_t0)
+
