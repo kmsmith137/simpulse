@@ -146,10 +146,10 @@ cdef class single_pulse:
 
 
     def _add_to_timestream_float(self, np.ndarray[float,ndim=2] out not None, out_t0, out_t1, int offset, stride):
-        simpulse_pxd._add_to_timestream_float(self.p, (<float *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
+        return simpulse_pxd._add_to_timestream_float(self.p, (<float *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
 
     def _add_to_timestream_double(self, np.ndarray[double,ndim=2] out not None, out_t0, out_t1, int offset, stride):
-        simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
+        return simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
 
 
     def get_signal_to_noise(self, sample_dt, sample_t0=0.0, sample_rms=1.0):
