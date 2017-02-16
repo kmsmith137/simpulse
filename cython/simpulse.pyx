@@ -152,38 +152,83 @@ cdef class single_pulse:
         return simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
 
 
-    def get_signal_to_noise(self, sample_dt, sample_t0=0.0, sample_rms=1.0):
+    def get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0):
         """
-        get_signal_to_noise(self, sample_dt, sample_t0=0.0, sample_rms=1.0)
+        get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0)
 
             Returns total signal-to-noise for all frequency channels and time samples combined.
             The signal-to-noise of a sampled pulse depends on 'sample_dt', the length of a sample in seconds.
 
-            The sample_rms argument is the RMS noise per sample.  This parameter can either be a scalar (if
+            The 'sample_rms' argument is the RMS noise per sample.  This parameter can either be a scalar (if
             all frequency channels have the same noise level) or a 1D array of length 'nfreq'.
 
-            In principle, it also depends on 'sample_t0', the starting time of an arbitrarily chosen sample,
-            although this dependence will be weak in realistic cases!
+	    The 'channel_weights' argument is the channel weighting.  This parameter can be a scalar (if all
+            all frequency channels have the same weight) or a 1D array of length 'nfreq'.
+
+	    NOTE: if 'channel_weights' is unspecified (None) then it defaults to 1/sample_rms^2 
+	    (not uniform weighting!)
+
+            In principle, the signal-to-noise depends on 'sample_t0', the starting time of an arbitrarily chosen 
+	    sample, although this dependence will be very weak in realistic cases!  This is included as an
+	    optional parameter, in case exploring the dependence is useful.
         """
 
-        sample_rms = np.array(sample_rms)
+        nfreq = self.p.nfreq
+        sample_rms = np.array(sample_rms, dtype=np.float64)
 
+        if sample_rms.ndim > 0:
+            if sample_rms.shape != (nfreq,):
+                raise RuntimeError("simpulse.single_pulse.get_signal_to_noise(): 'sample_rms' must be either a scalar, or a 1D array of length nfreq=%d (actual shape: %s)"
+                                    % (self.p.nfreq, sample_rms.shape))
+            if not sample_rms.flags['C_CONTIGUOUS']:
+                sample_rms = np.copy(sample_rms, order='C')
+                assert sample_rms.flags['C_CONTIGUOUS']
+
+
+        if channel_weights is not None:
+            channel_weights = np.array(channel_weights, dtype=np.float64)
+
+        if (channel_weights is not None) and (channel_weights.ndim > 0):
+            if channel_weights.shape != (nfreq,):
+                raise RuntimeError("simpulse.single_pulse.get_signal_to_noise(): 'channel_weights' must be either a scalar, or a 1D array of length nfreq=%d (actual shape: %s)"
+                                    % (self.p.nfreq, channel_weights.shape))
+            if not channel_weights.flags['C_CONTIGUOUS']:
+                channel_weights = np.copy(channel_weights, order='C')
+                assert channel_weights.flags['C_CONTIGUOUS']
+
+
+        # Case 1: sample_rms is a scalar, and channel weighting is uniform.
+        if (sample_rms.ndim == 0) and ((channel_weights is None) or (channel_weights.ndim == 0)):
+            return simpulse_pxd._get_signal_to_noise_scalar(self.p, sample_dt, sample_rms, sample_t0)
+
+        # Case 2: sample_rms is a vector, and channel_weights is unspecified (will default to 1/sample_rms^2)
+        if channel_weights is None:
+            return self._get_signal_to_noise_v(sample_dt, sample_rms, sample_t0)
+
+        # Case 3: channel_weights is specified, and either sample_rms or channel_weights is a vector
         if sample_rms.ndim == 0:
-            return simpulse_pxd._get_signal_to_noise_scalar(self.p, sample_dt, sample_t0, sample_rms)
+            sample_rms = sample_rms * np.ones(nfreq)
+        if channel_weights.ndim == 0:
+            channel_weights = channel_weights * np.ones(nfreq)
 
-        if sample_rms.shape == (self.p.nfreq,):
-            # FIXME what's the best way to ensure an array is contiguous in cython?
-            sample_rms2 = np.array(sample_rms, dtype=np.float64)
-            sample_rms2 = np.copy(sample_rms2, order='C')
-            return self._get_signal_to_noise_vector(sample_rms2, sample_dt, sample_t0)
-
-        raise RuntimeError("simpulse.single_pulse.get_signal_to_noise(): the 'sample_rms' argument must be either a scalar, or a 1D array of length nfreq=%d (actual shape: %s)"
-                           % (self.p.nfreq, sample_rms.shape))
+        return self._get_signal_to_noise_vv(sample_dt, sample_rms, channel_weights, sample_t0)
 
 
-    def _get_signal_to_noise_vector(self, np.ndarray[double,ndim=1] sample_rms not None, sample_dt, sample_t0):
+    # This is "Case 2" above: sample_rms is a vector, and channel_weights is None
+    def _get_signal_to_noise_v(self, sample_dt, np.ndarray[double,ndim=1] sample_rms not None, sample_t0):
         assert (sample_rms.ndim == 1) and (sample_rms.shape[0] == self.p.nfreq)
         assert sample_rms.flags['C_CONTIGUOUS']
 
-        return simpulse_pxd._get_signal_to_noise_vector(self.p, <double *> &sample_rms[0], sample_dt, sample_t0)
+        return simpulse_pxd._get_signal_to_noise_vector(self.p, sample_dt, <double *> &sample_rms[0], NULL, sample_t0)
+
+
+    # This is "Case 3" above: sample_rms and channel_weights are both vectors
+    def _get_signal_to_noise_vv(self, sample_dt, np.ndarray[double,ndim=1] sample_rms not None, np.ndarray[double,ndim=1] channel_weights not None, sample_t0):
+        assert (sample_rms.ndim == 1) and (sample_rms.shape[0] == self.p.nfreq)
+        assert sample_rms.flags['C_CONTIGUOUS']
+
+        assert (channel_weights.ndim == 1) and (channel_weights.shape[0] == self.p.nfreq)
+        assert channel_weights.flags['C_CONTIGUOUS']
+
+        return simpulse_pxd._get_signal_to_noise_vector(self.p, sample_dt, <double *> &sample_rms[0], <double *> &channel_weights[0], sample_t0)
 

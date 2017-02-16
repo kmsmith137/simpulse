@@ -228,7 +228,7 @@ template void single_pulse::add_to_timestream(float *out, double out_t0, double 
 template void single_pulse::add_to_timestream(double *out, double out_t0, double out_t1, int out_nt, int stride) const;
 
 
-double single_pulse::get_signal_to_noise(double sample_dt, double sample_t0, double sample_rms) const
+double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, double sample_t0) const
 {
     simpulse_assert(sample_dt > 0.0);
     simpulse_assert(sample_rms > 0.0);
@@ -254,26 +254,44 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_t0, dou
 	    acc += buf[i]*buf[i];
     }
 
-    return sqrt(acc / (sample_rms*sample_rms));
+    return sqrt(acc) / sample_rms;
 }
 
 
-double single_pulse::get_signal_to_noise(const double *sample_rms, double sample_dt, double sample_t0) const
+double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_rms, const double *channel_weights, double sample_t0) const
 {
     if (sample_rms == nullptr)
-	throw runtime_error("simpulse: null 'sample_rms' pointer in single_pulse::get_signal_to_noise()");
+	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): sample_rms pointer was NULL");
     if (sample_dt <= 0.0)
-	throw runtime_error("simpulse: 'sample_dt' was zero or negative in single_pulse::get_signal_to_noise()");
+	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): sample_dt must be positive");
+
+    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+	if (sample_rms[ifreq] < 0.0)
+	    throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): all values of 'sample_rms' array must be nonnegative");
+	if (channel_weights && (channel_weights[ifreq] < 0.0))
+	    throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): all values of 'channel_weights' array must be nonnegative");
+    }
+
+    vector<double> wtmp;
+
+    if (channel_weights == nullptr) {
+	wtmp.resize(nfreq);
+	channel_weights = &wtmp[0];
+
+	for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+	    if (sample_rms[ifreq] <= 0.0)
+		throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): if 'channel_weights' pointer is unspecified, then all sample_rms values must be positive");
+	    wtmp[ifreq] = 1.0 / (sample_rms[ifreq] * sample_rms[ifreq]);
+	}
+    }
 
     int nsamp_max = (int)(max_dt/sample_dt) + 3;
     vector<double> buf(nsamp_max, 0.0);
 
-    double acc = 0.0;
+    double sig_ampl = 0.0;
+    double noise_var = 0.0;
 
     for (int ifreq = 0; ifreq < nfreq; ifreq++) {
-	if (sample_rms[ifreq] <= 0.0)
-	    throw runtime_error("simpulse: all elements of the 'sample_rms' array must be positive");
-
 	// Range of samples spanned by pulse
 	double s0 = (undispersed_arrival_time + pulse_t0[ifreq] - sample_t0) / sample_dt;
 	double s1 = (undispersed_arrival_time + pulse_t1[ifreq] - sample_t0) / sample_dt;
@@ -285,14 +303,18 @@ double single_pulse::get_signal_to_noise(const double *sample_rms, double sample
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
 	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq);
 
-	double acc2 = 0.0;
+	double t = 0.0;
 	for (int i = 0; i < k-j; i++)
-	    acc2 += buf[i]*buf[i];
+	    t += square(buf[i]);
 	
-	acc += acc2 / (sample_rms[ifreq] * sample_rms[ifreq]);
+	sig_ampl += channel_weights[ifreq] * t;
+	noise_var += square(channel_weights[ifreq] * sample_rms[ifreq]) * t;
     }
 
-    return sqrt(acc);
+    if (noise_var <= 0.0)
+	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): computed noise variance is zero, this means that too many sample_rms (or channel_weights) values were zero");
+
+    return sig_ampl / sqrt(noise_var);
 }
 
 

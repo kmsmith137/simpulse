@@ -119,11 +119,11 @@ struct single_pulse {
     // In principle, it also depends on 'sample_t0', the starting time of an arbitrarily chosen sample,
     // although this dependence will be weak in realistic cases!
     //
-    double get_signal_to_noise(double sample_dt, double sample_t0=0.0, double sample_rms=1.0) const;
-
-    // Here is a version of get_signal_to_noise() which takes a length-nfreq array of noise rms values
-    // Note that the arguments are permuted relative to the previous version!
-    double get_signal_to_noise(const double *sample_rms, double sample_dt, double sample_t0) const;
+    double get_signal_to_noise(double sample_dt, double sample_rms=1.0, double sample_t0=0.0) const;
+    
+    // Here is a version of get_signal_to_noise() which takes length-nfreq arrays 'sample_rms' and 'channel_weights'.
+    // If 'channel_weights' are unspecified, then 1/sample_rms^2 weighting will be assumed.
+    double get_signal_to_noise(double sample_dt, const double *sample_rms, const double *channel_weights=NULL, double sample_t0=0.0) const;
 
     // String representation
     void print(std::ostream &os) const;
