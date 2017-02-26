@@ -176,7 +176,7 @@ double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
 // similar to _interpolate_cumsum() and _add_pulse_to_frequency_channel().
 //
 template<typename T>
-inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, double out_t0, double out_t1, int out_nt, int ifreq)
+inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight)
 {
     simpulse_assert(out);
     simpulse_assert(out_nt > 0);
@@ -191,7 +191,7 @@ inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, doub
 	return;
     
     double out_dt = (out_t1 - out_t0) / out_nt;
-    double w = sp.fluence * sp.pulse_freq_wt[ifreq] / out_dt;
+    double w = weight * sp.fluence * sp.pulse_freq_wt[ifreq] / out_dt;
     const double *cs = &sp.pulse_cumsum[ifreq*(sp.pulse_nt+1)];
 
     for (int it = 0; it < out_nt; it++) {
@@ -203,7 +203,7 @@ inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, doub
 
 
 template<typename T>
-void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride) const
+void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const
 {
     if (stride == 0)
 	stride = out_nt;
@@ -220,12 +220,12 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
 	return;
 
     for (int ifreq = 0; ifreq < nfreq; ifreq++)
-	_add_pulse_to_frequency_channel(*this, out + ifreq*stride, out_t0, out_t1, out_nt, ifreq);
+	_add_pulse_to_frequency_channel(*this, out + ifreq*stride, out_t0, out_t1, out_nt, ifreq, weight);
 }
 
 // Instantiate template for T=float and T=double
-template void single_pulse::add_to_timestream(float *out, double out_t0, double out_t1, int out_nt, int stride) const;
-template void single_pulse::add_to_timestream(double *out, double out_t0, double out_t1, int out_nt, int stride) const;
+template void single_pulse::add_to_timestream(float *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
+template void single_pulse::add_to_timestream(double *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
 
 
 double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, double sample_t0) const
@@ -248,7 +248,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, do
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
-	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq);
+	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 	
 	for (int i = 0; i < k-j; i++)
 	    acc += buf[i]*buf[i];
@@ -301,7 +301,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
-	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq);
+	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 
 	double t = 0.0;
 	for (int i = 0; i < k-j; i++)
