@@ -15,12 +15,13 @@ PYDIR=$(HOME)/lib/python2.7/site-packages
 PYTHON_INCDIR=$(HOME)/include/python2.7
 NUMPY_INCDIR=$(HOME)/lib/python2.7/site-packages/numpy/core/include
 
-#
+
 # C++ command line
 # Must support c++11
 # Don't forget to put -L. and -L$(LIBDIR) on the command line (in this order)
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # Don't forget -pthread and -fPIC
 # The -Wno-literal-suffix flag is convenient for suppressing warnings from hdf5.h
-#
-CPP=g++ -std=c++11 -O3 -march=native -pthread -Wall -Wno-literal-suffix -ffast-math -funroll-loops -fPIC -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)
+# The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
+
+CPP=g++ -std=c++11 -O3 -march=native -pthread -Wall -Wno-literal-suffix -Wno-strict-aliasing -ffast-math -funroll-loops -fPIC -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)

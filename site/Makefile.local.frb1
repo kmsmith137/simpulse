@@ -17,4 +17,6 @@ NUMPY_INCDIR=/usr/lib64/python2.7/site-packages/numpy/core/include
 # C++ command line
 # Must support c++11
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
-CPP=g++ -std=c++11 -fPIC -Wall -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)
+# The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
+
+CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)

@@ -15,7 +15,8 @@ PYTHON_INCDIR=/usr/include/python2.7
 
 # C++ command line
 # Must support c++11
-CPP=g++ -std=c++11 -fPIC -O3 -march=native -Wall -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR)
+# The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
+CPP=g++ -std=c++11 -fPIC -O3 -march=native -Wall -Wno-strict-aliasing -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR)
 
 # Extra linker flags when creating a shared library or exectutable from .o files
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
