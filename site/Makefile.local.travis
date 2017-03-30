@@ -19,12 +19,10 @@ NUMPY_INCDIR=/usr/lib/python2.7/dist-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
-CPP=$(CXX) -std=c++11 -Wall -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR)
+CPP=$(CXX) -fPIC -std=c++11 -Wall -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR)
 
 # Extra linker flags when creating a shared library or exectutable from .o files
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # Don't forget -fPIC
-CPP_LFLAGS=-fPIC -L. -L$(LIBDIR) -lc++
+CPP_LFLAGS=-fPIC -L. -L$(LIBDIR)
 
-# osx python modules must be linked with -lPython
-LIBS_PYMODULE=-lPython
