@@ -1,21 +1,21 @@
 # Makefile.local for travis-ci.org continuous integration builds
 
 # Directory where C++ libraries will be installed
-LIBDIR=$(HOME)/chime/lib
+LIBDIR ?= $(HOME)/chime/lib
 
 # Directory where C++ header files will be installed
-INCDIR=$(HOME)/chime/include
+INCDIR ?= $(HOME)/chime/include
 
 # Directory where Python modules will be installed
 # Don't forget to add $(PYDIR) to your PYTHONPATH environment variable
-PYDIR=$(LIBDIR)/python2.7/site-packages
+PYDIR ?= $(LIBDIR)/python2.7/site-packages
 
 # Read-only location of python header files, needed for cython
 # Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc()
-PYTHON_INCDIR=/usr/include/python2.7
+PYTHON_INCDIR ?= /usr/include/python2.7
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
-NUMPY_INCDIR=/usr/lib/python2.7/dist-packages/numpy/core/include
+NUMPY_INCDIR ?= /usr/lib/python2.7/dist-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
