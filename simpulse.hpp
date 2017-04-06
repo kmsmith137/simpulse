@@ -110,7 +110,7 @@ struct single_pulse {
     // If the highest-to-lowest ordering is desired, it can be obtained by using a negative stride
     // (and taking 'out' to point to the last row of the array rather than the first row)
     //
-    template<typename T> void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0) const;
+    template<typename T> void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0, double weight=1.) const;
     
     //
     // Returns total signal-to-noise for all frequency channels and time samples combined.
