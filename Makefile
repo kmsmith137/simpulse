@@ -2,11 +2,16 @@
 #   LIBDIR      install dir for C++ libraries
 #   INCDIR      install dir for C++ headers
 #   PYDIR       install dir for python/cython modules
-#   CPP         C++ compiler command line
+#   CPP         C++ compiler command line, including all flags
 #
 # Some optional variables which I only use for osx/clang:
 #   CPP_LFLAGS      extra linker flags when creating a .so or executable file from .o files
 #   LIBS_PYMODULE   any extra libraries needed to link a python extension module (osx needs -lPython)
+#
+# Note that CPP must include -I<dir> flags which point to the python and numpy include
+# directories.  These directories can be determined from python as follows:
+#   print distutils.sysconfig.get_python_inc()    # python includes
+#   print numpy.get_include()                     # numpy includes
 #
 # See site/Makefile.local.* for examples.
 
