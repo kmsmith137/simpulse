@@ -15,7 +15,7 @@ PYDIR=$(HOME)/lib/python2.7/site-packages
 PYTHON_INCDIR=/usr/include/python2.7
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
-NUMPY_INCDIR=/usr/lib/python2.7/dist-packages/numpy/core/include
+NUMPY_INCDIR=/usr/local/lib/python2.7/dist-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
