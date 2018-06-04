@@ -17,8 +17,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -O3 -march=native")
 
-# set(PYBIND11_CPP_STANDARD -std=c++11)
-# set(PYBIND11_PYTHON_VERSION 2.7)
+set(PYBIND11_CPP_STANDARD -std=c++11)
+set(PYBIND11_PYTHON_VERSION 2.7)
 
 
 ####################################################################################################
@@ -34,7 +34,7 @@ set(PREREQUISITES_MISSING "FALSE")
 
 message("")
 find_package(FFTW3)
-# find_package(PYBIND11_WRAPPER)
+find_package(PYBIND11_WRAPPER)
 
 
 if (FFTW3_FOUND)
@@ -46,10 +46,10 @@ else()
    set(PREREQUISITES_MISSING "TRUE")
 endif ()
 
-# if (NOT pybind11_FOUND)
-#    message("-- Fatal: must have pybind11")
-#    set(PREREQUISITES_MISSING "TRUE")
-# endif()
+if (NOT pybind11_FOUND)
+   message("-- Fatal: must have pybind11")
+   set(PREREQUISITES_MISSING "TRUE")
+endif()
 
 if (PREREQUISITES_MISSING)
    message("")
@@ -68,18 +68,18 @@ endif()
 #   - figure out how to display helpful output if the command failed (command line + stderr)
 #   - move this to its own .cmake file
 
-# execute_process(
-#     COMMAND "${PYTHON_EXECUTABLE}" -c "import distutils.sysconfig as sc; print sc.get_python_lib(prefix='${CMAKE_INSTALL_PREFIX}')"
-#     OUTPUT_VARIABLE PYTHON_MODULE_INSTALL_DIR
-#     OUTPUT_STRIP_TRAILING_WHITESPACE
-# )
+execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c "import distutils.sysconfig as sc; print sc.get_python_lib(prefix='${CMAKE_INSTALL_PREFIX}')"
+    OUTPUT_VARIABLE PYTHON_MODULE_INSTALL_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 # Is python module install dir in sys.path?
-# execute_process(
-#     COMMAND "${PYTHON_EXECUTABLE}" -c "import sys; print int('${PYTHON_MODULE_INSTALL_DIR}' in sys.path)"
-#     OUTPUT_VARIABLE PYTHON_MODULE_INSTALL_DIR_IN_PYTHONPATH
-#     OUTPUT_STRIP_TRAILING_WHITESPACE
-# )
+execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c "import sys; print int('${PYTHON_MODULE_INSTALL_DIR}' in sys.path)"
+    OUTPUT_VARIABLE PYTHON_MODULE_INSTALL_DIR_IN_PYTHONPATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 # Does toplevel install dir exist?
 execute_process(
@@ -100,33 +100,33 @@ execute_process(
 
 
 # 'make uninstall' needs to come after determination of PYTHON_MODULE_INSTALL_DIR
-# add_custom_target(
-#   uninstall
-#   COMMAND ${PROJECT_SOURCE_DIR}/cmake/uninstall.py ${CMAKE_INSTALL_PREFIX} ${PYTHON_MODULE_INSTALL_DIR}
-# )
+add_custom_target(
+  uninstall
+  COMMAND ${PROJECT_SOURCE_DIR}/cmake/uninstall.py ${CMAKE_INSTALL_PREFIX} ${PYTHON_MODULE_INSTALL_DIR}
+)
 
 
 add_subdirectory(cpp)
 add_subdirectory(include)
-# add_subdirectory(pybind11)
-# add_subdirectory(python)
+add_subdirectory(pybind11)
+add_subdirectory(python)
 
 
 message("")
 message("This configuration looks good!")
 message("   CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message("   INCLUDE_PATH: ${CMAKE_INCLUDE_PATH}")
-# message("   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
-# message("   PYTHON_MODULE_INSTALL_DIR: ${PYTHON_MODULE_INSTALL_DIR}")
+message("   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
+message("   PYTHON_MODULE_INSTALL_DIR: ${PYTHON_MODULE_INSTALL_DIR}")
 message("   LIBS: ${LIBSIMPULSE_LIBS}")
 message("")
 
 
-# if (NOT PYTHON_MODULE_INSTALL_DIR_IN_PYTHONPATH)
-#    message("-- Warning: python module install directory ${PYTHON_MODULE_INSTALL_DIR} is not in your PYTHONPATH")
-#    message("   You may want to add 'export PYTHONPATH=\$PYTHONPATH:${PYTHON_MODULE_INSTALL_DIR}' to your ~/.bashrc and log in again.")
-#    message("")
-# endif()
+if (NOT PYTHON_MODULE_INSTALL_DIR_IN_PYTHONPATH)
+   message("-- Warning: python module install directory ${PYTHON_MODULE_INSTALL_DIR} is not in your PYTHONPATH")
+   message("   You may want to add 'export PYTHONPATH=\$PYTHONPATH:${PYTHON_MODULE_INSTALL_DIR}' to your ~/.bashrc and log in again.")
+   message("")
+endif()
 
 if (NOT INSTALL_DIR_EXISTS)
    message("-- Warning: cmake install directory ${CMAKE_INSTALL_PREFIX} does not exist (or is not a directory).  You may need to create it.")
