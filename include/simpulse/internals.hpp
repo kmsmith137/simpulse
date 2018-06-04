@@ -12,9 +12,6 @@
 #include <stdexcept>
 #include <fftw3.h>
 
-#include "simpulse.hpp"
-
-
 // Branch predictor hint
 #ifndef _unlikely
 #define _unlikely(cond)  (__builtin_expect(cond,0))

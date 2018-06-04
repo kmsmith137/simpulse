@@ -1,4 +1,5 @@
-#include "simpulse_internals.hpp"
+#include "../include/simpulse.hpp"
+#include "../include/simpulse/internals.hpp"
 
 using namespace std;
 

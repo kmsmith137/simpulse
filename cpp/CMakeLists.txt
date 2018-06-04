@@ -1,0 +1,9 @@
+add_library(simpulse SHARED
+  constant_acceleration_phase_model.cpp
+  single_pulse.cpp
+  von_mises_profile.cpp
+)
+
+target_link_libraries(simpulse ${LIBSIMPULSE_LIBS})
+
+install(TARGETS simpulse DESTINATION lib)
