@@ -97,7 +97,6 @@ static void wrap_single_pulse(py::module &m)
 	    throw runtime_error("single_pulse.add_to_timestream(): array must be either float32 or float64-valued");
 
 	bool no_copy_needed = (out.writeable() && (stride[0] % itemsize == 0) && (stride[1] == itemsize));
-	cout << "XXX add_timestream: " << (no_copy_needed ? "no copy needed" : "making copy") << endl;
 
 	if (!no_copy_needed) {
 	    // Make copy
@@ -158,14 +157,14 @@ static void wrap_single_pulse(py::module &m)
 
     py::class_<single_pulse>(m, "single_pulse")
 	.def(py::init<int,int,double,double,double,double,double,double,double,double>(),
-	     "pulse_nt"_a, "nfreq"_a, "freq_lo_MHz"_a, "freq_hi_MHz"_a, "dm"_a, "sm"_a, 
+	     "nt"_a, "nfreq"_a, "freq_lo_MHz"_a, "freq_hi_MHz"_a, "dm"_a, "sm"_a, 
 	     "intrinsic_width"_a, "fluence"_a, "spectral_index"_a, "undispersed_arrival_time"_a,
 	     
 	     "Constructor syntax:\n"
 	     "\n"
 	     "    single_pulse(nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, intrinsic_width, fluence, spectral_index, undispersed_arrival_time)\n"
 	     "\n"
-	     "    pulse_nt = number of samples used \"under the hood\" to represent the pulse (suggest power of two; 1024 is usually good).\n"
+	     "    nt = number of samples used \"under the hood\" to represent the pulse (suggest power of two; 1024 is usually good).\n"
 	     "    nfreq, freq_lo_MHz, freq_hi_MHz = specification of frequency channels (assumed equally spaced).\n"
 	     "    dm = dispersion measure in its standard units (pc cm^{-3}).\n"
 	     "    sm = scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz.\n"
@@ -173,6 +172,7 @@ static void wrap_single_pulse(py::module &m)
 	     "    fluence = integrated flux in units Jy-s (where \"Jy\" really means \"whatever units the output of add_to_timestream() has\")\n"
 	     "    undispersed_arrival_time = arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin)")
 
+	// Read-only properties (constant after construction)
 	.def_readonly("pulse_nt", &single_pulse::pulse_nt, "Number of samples used 'under the hood' to represent the pulse (suggest power of two; 1024 is usually a good choice)")
 	.def_readonly("nfreq", &single_pulse::nfreq, "Number of frequency channels in band (assumed equally spaced)")
 	.def_readonly("freq_lo_MHz", &single_pulse::freq_lo_MHz, "Lowest frequency in band.")
@@ -180,9 +180,11 @@ static void wrap_single_pulse(py::module &m)
 	.def_readonly("dm", &single_pulse::dm, "Dispersion measure in its standard units (pc cm^{-3})")
 	.def_readonly("sm", &single_pulse::sm, "Scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz")
 	.def_readonly("intrinsic_width", &single_pulse::intrinsic_width, "Frequency-independent Gaussian width in seconds (not milliseconds)")
-	.def_readonly("fluence", &single_pulse::fluence, "Integrated flux in units Jy-s (where 'Jy' really means 'whatever units the output of add_to_timestream() has)'")
-	.def_readonly("spectral_index", &single_pulse::spectral_index, "Exponent alpha in flux ~ nu^alpha")
-	.def_readonly("undispersed_arrival_time", &single_pulse::undispersed_arrival_time, "Arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin")
+
+	// Read-write properties.
+	.def_readwrite("fluence", &single_pulse::fluence, "Integrated flux in units Jy-s (where 'Jy' really means 'whatever units the output of add_to_timestream() has)'")
+	.def_readwrite("spectral_index", &single_pulse::spectral_index, "Exponent alpha in flux ~ nu^alpha")
+	.def_readwrite("undispersed_arrival_time", &single_pulse::undispersed_arrival_time, "Arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin")
 
 	.def("__repr__", &single_pulse::str)
 
@@ -205,7 +207,7 @@ static void wrap_single_pulse(py::module &m)
 	     "WARNING: this ordering is used throughout 'simpulse', but the opposite ordering is used in rf_pipelines and bonsai!!\n"
 	     "To get the opposite ordering (highest-to-lowest), set freq_hi_to_lo=True.")
 
-	.def("get_signal_to_noise", get_signal_to_noise, "sample_dt"_a, "sample_rms"_a, "channel_weights"_a = py::none(), "sample_t0"_a = 0.0,
+	.def("get_signal_to_noise", get_signal_to_noise, "sample_dt"_a, "sample_rms"_a = 1.0, "channel_weights"_a = py::none(), "sample_t0"_a = 0.0,
 	     "get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0)\n"
 
 	     "Returns total signal-to-noise for all frequency channels and time samples combined.\n"

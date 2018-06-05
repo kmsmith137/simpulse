@@ -154,7 +154,7 @@ void single_pulse::get_endpoints(double &t0, double &t1) const
 // Helper function called by _add_pulse_to_frequency_channel().  
 // The 'arr' arg is an array of length (pulse_nt+1).
 // The 's' arg is time in "sample coords", i.e. elements of 'arr' correspond to times s=0,1,...,pulse_nt.
-double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
+inline double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
 {
     if (s < 1.0e-10)
 	return 0.0;
@@ -177,27 +177,27 @@ double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
 // similar to _interpolate_cumsum() and _add_pulse_to_frequency_channel().
 //
 template<typename T>
-inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight)
+void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const
 {
     simpulse_assert(out);
     simpulse_assert(out_nt > 0);
     simpulse_assert(out_t0 < out_t1);
-    simpulse_assert(ifreq >= 0 && ifreq < sp.nfreq);
+    simpulse_assert(ifreq >= 0 && ifreq < nfreq);
 
     // Convert input times to "sample coords"
-    double s0 = sp.pulse_nt * (out_t0 - sp.undispersed_arrival_time - sp.pulse_t0[ifreq]) / (sp.pulse_t1[ifreq] - sp.pulse_t0[ifreq]);
-    double s1 = sp.pulse_nt * (out_t1 - sp.undispersed_arrival_time - sp.pulse_t0[ifreq]) / (sp.pulse_t1[ifreq] - sp.pulse_t0[ifreq]);
+    double s0 = pulse_nt * (out_t0 - undispersed_arrival_time - pulse_t0[ifreq]) / (pulse_t1[ifreq] - pulse_t0[ifreq]);
+    double s1 = pulse_nt * (out_t1 - undispersed_arrival_time - pulse_t0[ifreq]) / (pulse_t1[ifreq] - pulse_t0[ifreq]);
 
-    if ((s0 >= sp.pulse_nt) || (s1 <= 0))
+    if ((s0 >= pulse_nt) || (s1 <= 0))
 	return;
     
     double out_dt = (out_t1 - out_t0) / out_nt;
-    double w = weight * sp.fluence * sp.pulse_freq_wt[ifreq] / out_dt;
-    const double *cs = &sp.pulse_cumsum[ifreq*(sp.pulse_nt+1)];
+    double w = weight * fluence * pulse_freq_wt[ifreq] / out_dt;
+    const double *cs = &pulse_cumsum[ifreq*(pulse_nt+1)];
 
     for (int it = 0; it < out_nt; it++) {
-	double a = _interpolate_cumsum(sp.pulse_nt, cs, s0 + (it)*(s1-s0)/(double)out_nt);
-	double b = _interpolate_cumsum(sp.pulse_nt, cs, s0 + (it+1)*(s1-s0)/(double)out_nt);
+	double a = _interpolate_cumsum(pulse_nt, cs, s0 + (it)*(s1-s0)/(double)out_nt);
+	double b = _interpolate_cumsum(pulse_nt, cs, s0 + (it+1)*(s1-s0)/(double)out_nt);
 	out[it] += w * (b-a);
     }
 }
@@ -221,12 +221,8 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
 	return;
 
     for (int ifreq = 0; ifreq < nfreq; ifreq++)
-	_add_pulse_to_frequency_channel(*this, out + ifreq*stride, out_t0, out_t1, out_nt, ifreq, weight);
+	_add_pulse_to_frequency_channel(out + ifreq*stride, out_t0, out_t1, out_nt, ifreq, weight);
 }
-
-// Instantiate template for T=float and T=double
-template void single_pulse::add_to_timestream(float *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
-template void single_pulse::add_to_timestream(double *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
 
 
 double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, double sample_t0) const
@@ -249,7 +245,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, do
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
-	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
+	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 	
 	for (int i = 0; i < k-j; i++)
 	    acc += buf[i]*buf[i];
@@ -302,7 +298,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
-	_add_pulse_to_frequency_channel(*this, &buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
+	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 
 	double t = 0.0;
 	for (int i = 0; i < k-j; i++)
@@ -333,6 +329,14 @@ string single_pulse::str() const
     this->print(ss);
     return ss.str();
 }
+
+
+#define INSTANTIATE(T) \
+    template void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const; \
+    template void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const
+
+INSTANTIATE(float);
+INSTANTIATE(double);
 
 
 }   // namespace simpulse

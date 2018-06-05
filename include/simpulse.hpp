@@ -41,35 +41,26 @@ inline double scattering_time(double sm, double freq_MHz)
 
 // -------------------------------------------------------------------------------------------------
 //
-// struct single_pulse: represents one dispersed, scattered pulse, in a fixed frequency channelization.
-//
+// class single_pulse: represents one dispersed, scattered pulse, in a fixed frequency channelization.
 
 
-struct single_pulse {
-    int     pulse_nt;          // number of samples used "under the hood" to represent pulse (1024 is usually a good default)
-    int     nfreq;             // number of frequency channels, assumed equally spaced
-    double  freq_lo_MHz;       // lower limit of frequency band
-    double  freq_hi_MHz;       // upper limit of frequency band
+class single_pulse {
+public:
+    // These parameters of the pulse cannot be changed after construction.
 
-    double  dm;                      // dispersion measure in its standard units (pc cm^{-3})
-    double  sm;                      // we define the "scattering measure" SM to be scattering time in milliseconds at 1 GHz
-    double  intrinsic_width;         // frequency-independent Gaussian width in seconds
-    double  fluence;                 // F(nu_0) = int I(t) dt evaluated at central frequency
-    double  spectral_index;          // F(nu) = F(nu_0) (nu/nu_0)^alpha
-    double  undispersed_arrival_time;  // arrival time at nu=infty, in seconds relative to an arbitrary origin.
+    const int    pulse_nt;          // number of samples used "under the hood" to represent pulse (1024 is usually a good default)
+    const int    nfreq;             // number of frequency channels, assumed equally spaced
+    const double freq_lo_MHz;       // lower limit of frequency band
+    const double freq_hi_MHz;       // upper limit of frequency band
+    const double dm;                // dispersion measure in its standard units (pc cm^{-3})
+    const double sm;                // we define the "scattering measure" SM to be scattering time in milliseconds at 1 GHz
+    const double intrinsic_width;   // frequency-independent Gaussian width in seconds
 
-    //
-    // Under-the-hood representation of the pulse.
-    // This shouldn't be needed from the outside world.
-    // Note that all "internal" times are relative to undispersed_arrival_time.
-    //
-    std::vector<double> pulse_t0;        // start time of pulse in i-th channel, relative to undispersed_arrival_time
-    std::vector<double> pulse_t1;        // end time of pulse in i-th channel, relative to undispersed_arrival_time
-    std::vector<double> pulse_freq_wt;   // weight of pulse in i-th channel, determined by spectral index.
-    std::vector<double> pulse_cumsum;    // shape (nfreq, pulse_nt+1) array, containing cumulative sum of pulse, normalized to sum=1
-    double min_t0;                       // minimum of all pulse_t0 values
-    double max_t1;                       // maximum of all pulse_t1 values
-    double max_dt;                       // maximum of all (pulse_t1-pulse_t0) values
+    // These parameters can be changed after construction.
+
+    double fluence;                   // F(nu_0) = int I(t) dt evaluated at central frequency
+    double spectral_index;            // F(nu) = F(nu_0) (nu/nu_0)^alpha
+    double undispersed_arrival_time;  // arrival time at nu=infty, in seconds relative to an arbitrary origin.
     
     //
     // Constructor arguments:
@@ -129,13 +120,28 @@ struct single_pulse {
     void print(std::ostream &os) const;
     std::string str() const;
 
-    // Internal helper function
-    void _compute_freq_wt();
-
     // We make the single_pulse noncopyable, even though the default copy constructor is a sensible "deep" copy.  
     // We do this to catch performance bugs, since a deep copy of a single_pulse is probably unintentional.
     single_pulse(const single_pulse &) = delete;
     single_pulse& operator=(const single_pulse &) = delete;
+
+protected:
+
+    // Under-the-hood representation of the pulse.
+    std::vector<double> pulse_t0;        // start time of pulse in i-th channel, relative to undispersed_arrival_time
+    std::vector<double> pulse_t1;        // end time of pulse in i-th channel, relative to undispersed_arrival_time
+    std::vector<double> pulse_freq_wt;   // weight of pulse in i-th channel, determined by spectral index.
+    std::vector<double> pulse_cumsum;    // shape (nfreq, pulse_nt+1) array, containing cumulative sum of pulse, normalized to sum=1
+    double min_t0;                       // minimum of all pulse_t0 values
+    double max_t1;                       // maximum of all pulse_t1 values
+    double max_dt;                       // maximum of all (pulse_t1-pulse_t0) values
+
+    // Internal helper functions follow.
+
+    void _compute_freq_wt();
+
+    template<typename T>
+    void _add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const;    
 };
 
 
