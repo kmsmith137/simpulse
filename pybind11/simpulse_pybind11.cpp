@@ -20,4 +20,7 @@ PYBIND11_MODULE(simpulse_pybind11, m)
 	  "scattering_time(sm, freq_MHz) -> scattering time in seconds");
 
     simpulse_pybind11::wrap_single_pulse(m);
+    simpulse_pybind11::wrap_phase_model_base(m);
+    simpulse_pybind11::wrap_constant_acceleration_phase_model(m);
+    simpulse_pybind11::wrap_von_mises_profile(m);
 }
