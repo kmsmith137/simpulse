@@ -75,6 +75,9 @@ struct coerce_to_1d {
 
 void wrap_single_pulse(py::module &m)
 {
+    py::options options;
+    options.disable_function_signatures();
+
     auto get_endpoints = [](single_pulse &self) -> py::tuple
     {
 	double t0, t1;
@@ -194,12 +197,13 @@ void wrap_single_pulse(py::module &m)
 	.def("__repr__", &single_pulse::str)
 
 	.def("get_endpoints", get_endpoints, 
+	     "get_endpoints(freq_lo_MHz, freq_hi_MHz) -> (t0, t1)"
+	     "\n"
 	     "Returns a pair (t0,t1): earliest and latest arrival times in the band [freq_lo_MHz, freq_hi_MHz].\n"
 	     "(Note that both of these will be larger than single_pulse::undispersed_arrival_time, unless the intrinsic width is very large).")
 
 	.def("add_to_timestream", add_to_timestream, "out"_a, "t0"_a, "t1"_a, "freq_hi_to_lo"_a = false,
-
-	     "add_to_timestream(out, t0, t1, freq_hi_to_lo=False)\n"
+	     "add_to_timestream(out, t0, t1, freq_hi_to_lo=False) -> None\n"
 	     "\n"
 	     "This method adds the pulse to a 2D array of (frequency, time) samples.\n"
 	     "It is sometimes called incrementally, as a stream of 2D arrays is generated.\n"
