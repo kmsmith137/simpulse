@@ -37,7 +37,7 @@ public:
 
     double fluence;                   // F(nu_0) = int I(t) dt evaluated at central frequency
     double spectral_index;            // F(nu) = F(nu_0) (nu/nu_0)^alpha
-    double undispersed_arrival_time;  // arrival time at nu=infty, in seconds relative to an arbitrary origin.
+    double undispersed_arrival_time;  // arrival time at high frequency, in seconds, and relative to the same origin used in add_to_timestream()
     
     //
     // Constructor arguments:
