@@ -78,6 +78,26 @@ void wrap_single_pulse(py::module &m)
     py::options options;
     options.disable_function_signatures();
 
+    const char *doc =
+	"This class represents a single dispersed pulse (i.e. an FRB), with frequency channelization specified at contruction.\n\n"
+	"Constructor syntax:\n"
+	"\n"
+	"    p = single_pulse(nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, intrinsic_width, fluence, spectral_index, undispersed_arrival_time)\n"
+	"\n"
+	"where:\n"
+	"\n"
+	"    nt = number of samples used internally to represent the pulse (suggest power of two; 1024 is usually good).\n\n"
+	"    nfreq = number of frequency channels (assumed equally spaced)\n\n"
+	"    freq_lo_MHz = lowest frequency in band (MHz)\n\n"
+	"    freq_hi_MHz = highest frequency in band (MHz)\n\n"
+	"    dm = dispersion measure in its standard units (pc cm^{-3}).\n\n"
+	"    sm = scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz.\n\n"
+	"    intrinsic_width = frequency-independent Gaussian width in seconds (not milliseconds).\n\n"
+	"    fluence = integrated flux (i.e. units are flux-time) at central frequency of band\n\n"
+	"    spectral_index = parametrizes power-law frequency dependence of fluence of the form nu^alpha, where alpha is the spectral index\n\n"
+	"    undispersed_arrival_time = arrival time of pulse at high frequency, in seconds relative to an arbitrary origin)";
+
+
     auto get_endpoints = [](single_pulse &self) -> py::tuple
     {
 	double t0, t1;
@@ -163,36 +183,41 @@ void wrap_single_pulse(py::module &m)
     };
 
 
-    py::class_<single_pulse>(m, "single_pulse")
+    py::class_<single_pulse>(m, "single_pulse", doc)
 	.def(py::init<int,int,double,double,double,double,double,double,double,double>(),
 	     "nt"_a, "nfreq"_a, "freq_lo_MHz"_a, "freq_hi_MHz"_a, "dm"_a, "sm"_a, 
-	     "intrinsic_width"_a, "fluence"_a, "spectral_index"_a, "undispersed_arrival_time"_a,
-	     
-	     "Constructor syntax:\n"
-	     "\n"
-	     "    single_pulse(nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, intrinsic_width, fluence, spectral_index, undispersed_arrival_time)\n"
-	     "\n"
-	     "    nt = number of samples used \"under the hood\" to represent the pulse (suggest power of two; 1024 is usually good).\n"
-	     "    nfreq, freq_lo_MHz, freq_hi_MHz = specification of frequency channels (assumed equally spaced).\n"
-	     "    dm = dispersion measure in its standard units (pc cm^{-3}).\n"
-	     "    sm = scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz.\n"
-	     "    intrinsic_width = frequency-independent Gaussian width in seconds (not milliseconds).\n"
-	     "    fluence = integrated flux in units Jy-s (where \"Jy\" really means \"whatever units the output of add_to_timestream() has\")\n"
-	     "    undispersed_arrival_time = arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin)")
+	     "intrinsic_width"_a, "fluence"_a, "spectral_index"_a, "undispersed_arrival_time"_a)
 
-	// Read-only properties (constant after construction)
-	.def_readonly("pulse_nt", &single_pulse::pulse_nt, "Number of samples used 'under the hood' to represent the pulse (suggest power of two; 1024 is usually a good choice)")
-	.def_readonly("nfreq", &single_pulse::nfreq, "Number of frequency channels in band (assumed equally spaced)")
-	.def_readonly("freq_lo_MHz", &single_pulse::freq_lo_MHz, "Lowest frequency in band.")
-	.def_readonly("freq_hi_MHz", &single_pulse::freq_hi_MHz, "Highest frequency in band.")
-	.def_readonly("dm", &single_pulse::dm, "Dispersion measure in its standard units (pc cm^{-3})")
-	.def_readonly("sm", &single_pulse::sm, "Scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz")
-	.def_readonly("intrinsic_width", &single_pulse::intrinsic_width, "Frequency-independent Gaussian width in seconds (not milliseconds)")
 
-	// Read-write properties.
-	.def_readwrite("fluence", &single_pulse::fluence, "Integrated flux in units Jy-s (where 'Jy' really means 'whatever units the output of add_to_timestream() has)'")
-	.def_readwrite("spectral_index", &single_pulse::spectral_index, "Exponent alpha in flux ~ nu^alpha")
-	.def_readwrite("undispersed_arrival_time", &single_pulse::undispersed_arrival_time, "Arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin")
+	.def_readonly("pulse_nt", &single_pulse::pulse_nt, 
+		      "Number of samples used internally to represent the pulse")
+
+	.def_readonly("nfreq", &single_pulse::nfreq, 
+		      "Number of frequency channels in band (assumed equally spaced)")
+
+	.def_readonly("freq_lo_MHz", &single_pulse::freq_lo_MHz,
+		      "Lowest frequency in band (MHz).")
+
+	.def_readonly("freq_hi_MHz", &single_pulse::freq_hi_MHz,
+		      "Highest frequency in band (MHz).")
+
+	.def_readonly("dm", &single_pulse::dm, 
+		      "Dispersion measure in its standard units (pc cm^{-3})")
+
+	.def_readonly("sm", &single_pulse::sm, 
+		      "Scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz")
+
+	.def_readonly("intrinsic_width", &single_pulse::intrinsic_width, 
+		      "Frequency-independent Gaussian width in seconds (not milliseconds)")
+
+	.def_readwrite("fluence", &single_pulse::fluence, 
+		       "Integrated flux (i.e. units are flux-time) at center of band")
+
+	.def_readwrite("spectral_index", &single_pulse::spectral_index, 
+		       "Parametrizes power-law frequency dependence of fluence: (nu/nu_c)^alpha, where alpha is the spectral index")
+
+	.def_readwrite("undispersed_arrival_time", &single_pulse::undispersed_arrival_time, 
+		       "Arrival time of pulse at high frequency, in seconds relative to an arbitrary origin")
 
 	.def("__repr__", &single_pulse::str)
 
