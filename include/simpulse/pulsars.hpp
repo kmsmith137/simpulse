@@ -16,67 +16,115 @@ namespace simpulse {
 
 // -------------------------------------------------------------------------------------------------
 //
-// Pulsar stuff
+// Pulsar phase models.
 
 
-struct phase_model {
-    // Can be called with nderivs=0 to get the phase model Phi(t), or nderivs > 0 to get derivatives of phi
-    virtual double eval(double t, int nderivs=0) const = 0;
+struct phase_model_base 
+{
+    // Evaluates the phase model at a single time 't'.
+    // Can be called with nderivs=0 to get Phi(t), or nderivs > 0 to get derivatives Phi^{(n)}(t).
 
-    // Returns mean phi over a given range.
-    virtual double eval_mean_phi(double t1, double t2) const = 0;
+    virtual double eval_phi(double t, int nderivs=0) const = 0;
 
-    // Vectorized version of eval().
-    // No 'nderivs' argument for now, but I may add it later!
-    virtual void eval_phi(int nt, double *phi_out, const double *t_in) const = 0;
 
-    static std::shared_ptr<phase_model> make_constant_acceleration(double phi0, double omega0, double omega_dot, double t0=0.0);
+    // Evaluates the phase model at a sequence of equally spaced time samples:
+    // The 't0' and 't1' args are the starting/ending times of the sampled region.
+    //
+    // eval_phi_sequence() is not pure virtual: there is a default implementation which loops over eval_phi().
+    // Subclasses may optionally override eval_sequence() as an optimization to improve performace.  
+    // (FIXME: I'm planning to time this, to see how much it actually matters!)
+
+    virtual void eval_phi_sequence(double t0, double t1, ssize_t nsamples, double *phi_out, int nderivs=0) const;
 };
 
 
-// For now, the only pulse_profile we consider is the von Mises profile.
-// We define the duty cycle to be (pulse FWHM) / (pulse period).
-struct von_mises_profile {
-    double duty_cycle = 0.0;
-    int nphi = 0;
-    int nphi2 = 0;   // = nphi/2+1
+struct constant_acceleration_phase_model : public phase_model_base 
+{
+    const double phi0;
+    const double f0;
+    const double fdot;
+    const double t0;
 
-    std::vector<double> profile_fft;      // length nphi2, normalized to profile_fft[0]=1.
-    std::vector<double> profile_antider;  // padded to length (nphi+1)
+    constant_acceleration_phase_model(double phi0, double f0, double fdot, double t0);
 
-    // An interpolation used to store the function N(x) = \sum_{n\ne 0} | rho_n j_0(nx/2) |^2 as a function of x.
-    std::vector<double> ntab;
-    double ntab_xmax;
-    int ntab_size;
+    virtual double eval_phi(double t, int nderivs) const override;
+};
+    
 
-    // If min_nphi=0, then a reasonable default will be chosen (recommended).
-    von_mises_profile(double duty_cycle, int min_nphi=0);
+// -------------------------------------------------------------------------------------------------
+//
+// Pulsar profiles.
+//
+// For now, the only pulse profile we implement is the von Mises profile.
+// Eventually, we might implement more profiles and define a 'pulsar_profile' base class.
+//
+// The von Mises profile is
+//
+//   f(phi) = exp[ -2 kappa sin(pi*phi)^2 ]
+//
+// where 'phi' is the pulse phase (defined so that peak intensity occurs at integer values of phi),
+// and 'kappa' is a width parameter (larger kappa corresponds to a narrower pulse).  The parameter
+// 'kappa' is related to the duty cycle D (defined as the pulse FWHM divided by the pulse period) by:
+//
+//   kappa = log(2) / (2 sin^2(pi*D/2))
 
-    // Note: 'out' is an array of length nt, but 'phi' is an array of length (nt+1).
-    // The i-th sample is assumed to span phase range (phi[i], phi[i+1]).
-    // This routine is pretty fast (~5e7 samples/sec on my laptop) but could be vectorized to run faster.
-    // The amplitude has units of intensity.
-    void eval(int nt, double *out, const double *phi, bool detrend, double amplitude=1.0) const;
 
+class von_mises_profile {
+public:
+    // If the 'detrend' flag is set, an offset will be subtracted from the pulse profile, so that the mean is zero.
+    // If 'min_internal_nphi' is zero, then a reasonable default value of 'internal_nphi' will be chosen (recommended).
+    von_mises_profile(double duty_cycle, bool detrend, int min_internal_nphi=0);
+
+    const double duty_cycle;
+    const bool detrend;
+    const int internal_nphi;
+
+    // These are the main routines used to simulate a pulsar.
     //
-    // Returns the amplitude which gives signal-to-noise ratio 1.  Strictly speaking, the returned
-    // amplitude is an approximation which is accurate in the limit where the observation contains
-    // many pulse periods, and the pulse frequency doesn't change much over the observation.
-    //
-    //    eta = a noise parameter with units intensity-time^(1/2)
-    //    omega = angular pulse frequency
-    //    tsamp = timestream sample length
-    //    T = total timestream length
-    //
-    // Note that 'omega' and 'tsamp' are only used for determining the finite-sample correction.
-    // This correction can be disabled by either setting omega=0 or tsamp=0.
-    //
-    // FIXME: it may be convenient later to implement a vectorized version which evaluates
-    // on a grid of omega values.
-    //
-    double get_normalization(double eta, double omega, double tsamp, double T, bool detrend) const;
+    // In eval_integrated_samples(), 't0' should be the _beginning_ of the first sample, 
+    // and 't1' should be the _end_ of the last sample.  Thus, t1=t0+nt*dt, where dt is 
+    // the length of a sample (not t1=t0+(nt-1)*dt).
 
-    static int default_nphi(double duty_cycle);
+    void eval_integrated_samples(double *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
+
+    // void add_integrated_samples(double *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
+    
+    // By default, the profile is normalized so that its mean (not peak) value is 1 (before detrending!)
+    double point_eval(double phi, double amplitude=1.0) const;    
+
+    // Returns the total SNR of a single pulse, as computed by integrate_samples() with amplitude=1.
+    double get_single_pulse_signal_to_noise(double dt_sample, double pulse_freq, double sample_rms=1.0) const;
+    double get_multi_pulse_signal_to_noise(double total_time, double dt_sample, double pulse_freq, double sample_rms=1.0) const;
+
+    double get_mean_flux() const { return mean_flux; }
+    
+    // get_profile_fft(): outputs values of rho_m = int_0^1 dphi rho(phi) e^{2 pi i m phi}.
+    // Since we normalize the pulse to mean 1, rho_0 will either be 1 or 0, depending on whether the 'detrend' flag is set.
+    // Note that rho_m is real, and rho_m = rho_{-m}, since the von Mises profile is symmetric under phi -> (1-phi).
+    // Note: we only compute rho_m for m < internal_nphi2.  If nout > internal_nphi2, then 'out' will be zero-padded.
+    // Note: out[0] = xxx
+
+    template<typename T> void get_profile_fft(T *out, int nout) const;
+
+    // For debugging.
+    double eval_integrated_sample_slow(double phi0, double phi1, double amplitude=1.0) const;
+
+protected:
+    const int internal_nphi2;
+    const double kappa;
+    double mean_flux = 0.0;
+    
+    // Note: padded to length (internal_nphi+1), for internal convenience interpolating.
+    std::vector<double> detrended_profile;
+    std::vector<double> detrended_profile_antider;
+    
+    // Length internal_nphi2, normalized to profile_fft[0]=1.
+    std::vector<double> profile_fft;
+
+    mutable std::vector<double> phi_tmp;   // length (tmp_block_size + 1)
+    const ssize_t phi_block_size = 1024;
+
+    double _get_rho2(double dphi) const;
 };
 
 

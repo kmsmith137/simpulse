@@ -53,7 +53,7 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 	double nu_lo = freq_lo_MHz + (ifreq) * (freq_hi_MHz - freq_lo_MHz) / (double)nfreq;
 	double nu_hi = freq_lo_MHz + (ifreq+1) * (freq_hi_MHz - freq_lo_MHz) / (double)nfreq;
 	double nu_c = (nu_lo + nu_hi) / 2.;
-
+	
 	double dm_delay0 = dispersion_delay(dm, nu_hi);
 	double dm_delay1 = dispersion_delay(dm, nu_lo);
 	double dm_width = dm_delay1 - dm_delay0;
@@ -240,14 +240,14 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, do
 	double s0 = (undispersed_arrival_time + pulse_t0[ifreq] - sample_t0) / sample_dt;
 	double s1 = (undispersed_arrival_time + pulse_t1[ifreq] - sample_t0) / sample_dt;
 
-	int j = round_down(s0);
-	int k = round_up(s1);
+	ssize_t j = round_down(s0);
+	ssize_t k = round_up(s1);
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
 	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 	
-	for (int i = 0; i < k-j; i++)
+	for (ssize_t i = 0; i < k-j; i++)
 	    acc += buf[i]*buf[i];
     }
 
@@ -293,15 +293,15 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 	double s0 = (undispersed_arrival_time + pulse_t0[ifreq] - sample_t0) / sample_dt;
 	double s1 = (undispersed_arrival_time + pulse_t1[ifreq] - sample_t0) / sample_dt;
 
-	int j = round_down(s0);
-	int k = round_up(s1);
+	ssize_t j = round_down(s0);
+	ssize_t k = round_up(s1);
 	simpulse_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
 	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
 
 	double t = 0.0;
-	for (int i = 0; i < k-j; i++)
+	for (ssize_t i = 0; i < k-j; i++)
 	    t += square(buf[i]);
 	
 	sig_ampl += channel_weights[ifreq] * t;

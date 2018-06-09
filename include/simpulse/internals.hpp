@@ -67,16 +67,23 @@ inline double bessj0(double x)
     return (x*x > 1.0e-100) ? (sin(x)/x) : 1.0;
 }
 
-// These implementations of round_down() and round_up() are guaranteed correct for negative arguments
-inline int round_down(double x)
+// According to C++ spec, the sign of (m % n) is implementation-defined if either operand is negative
+// This version guarantees (0 <= (m%n) < n) in the case where m is negative (but still assumes n positive)
+static inline ssize_t xmod(ssize_t m, ssize_t n)
 {
-    int i = (int)x;
+    return (m >= 0) ? (m % n) : ((n-1) - ((-m-1) % n));
+}
+
+// These implementations of round_down() and round_up() are guaranteed correct for negative arguments
+inline ssize_t round_down(double x)
+{
+    ssize_t i = ssize_t(x);
     return (i <= x) ? i : (i-1);
 }
 
-inline int round_up(double x)
+inline ssize_t round_up(double x)
 {
-    int i = (int)x;
+    ssize_t i = ssize_t(x);
     return (i >= x) ? i : (i+1);
 }
 
