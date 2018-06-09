@@ -1,5 +1,6 @@
 #include "simpulse_pybind11.hpp"
-#include "../include/simpulse/pulsars.hpp"
+#include "../include/simpulse/pulsar_phase_models.hpp"
+#include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"   // simpulse_assert()
 
 #include <pybind11/numpy.h>

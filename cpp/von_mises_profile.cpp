@@ -1,4 +1,5 @@
-#include "../include/simpulse.hpp"
+#include "../include/simpulse/pulsar_phase_models.hpp"
+#include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"
 
 #define DEBUG 1

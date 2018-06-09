@@ -1,4 +1,4 @@
-#include "../include/simpulse/pulsars.hpp"
+#include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/internals.hpp"
 
 using namespace std;
