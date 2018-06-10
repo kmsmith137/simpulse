@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+
 """
 This is a throwaway script from when I was visually debugging the pulse simulation code.
-Some day, I may replace it with a more rigorous test.  The 'reference_*.png' files show 
-what the results should look like.
-
-to run, simply do $./plot-pulses.py
+I don't really use it any more, and I'll probably get rid of it soon!
+The 'example99_reference_*.png' files show what the results should look like.
 """
+
 import numpy as np
 import matplotlib; matplotlib.use('Agg') # 'Agg' enables silent output to file
 import matplotlib.pyplot as plt
@@ -92,7 +92,7 @@ def plot1():
               ifreq_list = [0, 256, 511], 
               color_list = ['r', 'b', 'm'],
               label_list = [ '1 GHz', '1.5 GHz', '2.0 GHz' ],
-              filename = 'plot1.png')
+              filename = 'example99_plot1.png')
 
 def plot2():
     """Boxcars labeled by time intervals"""
@@ -114,7 +114,7 @@ def plot2():
               ifreq_list = [0, 2, 4, 6], 
               color_list = ['r', 'b', 'm', 'k'],
               label_list = [ '131.8-141.5', '116.8-120.3', '114.1-116.8', '110.4-112.0' ],
-              filename = 'plot2.png')
+              filename = 'example99_plot2.png')
 
 def plot3():
     """
@@ -139,7 +139,7 @@ def plot3():
               ifreq_list = [0, 256, 511], 
               color_list = ['r', 'b', 'm'],
               label_list = [ '1 GHz', '1.5 GHz', '2.0 GHz' ],
-              filename = 'plot3.png')
+              filename = 'example99_plot3.png')
 
 plot1()
 plot2()
