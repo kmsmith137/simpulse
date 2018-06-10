@@ -2,7 +2,7 @@
 #include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"
 
-#define DEBUG 1
+#define DEBUG 0
 
 using namespace std;
 
@@ -105,7 +105,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 	rho_a[iphi+1] = rho_a[iphi] + x;
     }
 
-    simpulse_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-12);
+    simpulse_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-11);
 }
 
 
@@ -143,7 +143,7 @@ struct ihelper {
 #if DEBUG
 	simpulse_assert((i >= 0) && (i < n));
 	simpulse_assert((u >= -1.0e-12) && (u <= 1+1.0e-12));
-	simpulse_assert(fabs(p - j*n - i - u) < (1.0e-13 * (1 + fabs(p))));
+	simpulse_assert(fabs(p - j*n - i - u) < (1.0e-12 * (1 + fabs(p))));
 #endif
 
 	rho0 = rho[i];
