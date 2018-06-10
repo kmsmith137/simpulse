@@ -65,7 +65,7 @@ void wrap_constant_acceleration_phase_model(py::module &m)
 	"This class represents a pulsar whose acceleration (i.e. frequency derivative df/dt)\n"
 	"is constant in time.  (Subclass of phase_model_base.)\n"
 	"\n"
-	"Constructor syntax:\n"
+	"Constructor syntax::\n"
 	"\n"
 	"    pm = simpulse.constant_acceleration_phase_model(phi0, f0, fdot, t0)\n"
 	"\n"

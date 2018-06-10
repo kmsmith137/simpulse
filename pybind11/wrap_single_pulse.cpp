@@ -80,9 +80,10 @@ void wrap_single_pulse(py::module &m)
 
     const char *doc =
 	"This class represents a single dispersed pulse (i.e. an FRB), with frequency channelization specified at contruction.\n\n"
-	"Constructor syntax:\n"
+	"Constructor syntax::\n"
 	"\n"
-	"    p = single_pulse(nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, intrinsic_width, fluence, spectral_index, undispersed_arrival_time)\n"
+	"    p = single_pulse(nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, intrinsic_width,\n"
+	"                     fluence, spectral_index, undispersed_arrival_time)\n"
 	"\n"
 	"where:\n"
 	"\n"
@@ -95,7 +96,7 @@ void wrap_single_pulse(py::module &m)
 	"    intrinsic_width = frequency-independent Gaussian width in seconds (not milliseconds).\n\n"
 	"    fluence = integrated flux (i.e. units are flux-time) at central frequency of band\n\n"
 	"    spectral_index = parametrizes power-law frequency dependence of fluence of the form nu^alpha, where alpha is the spectral index\n\n"
-	"    undispersed_arrival_time = arrival time of pulse at high frequency, in seconds, and relative to the same origin used in add_to_timestream()");
+	"    undispersed_arrival_time = arrival time of pulse at high frequency, in seconds, and relative to the same origin used in add_to_timestream()";
 
 
     auto get_endpoints = [](single_pulse &self) -> py::tuple
