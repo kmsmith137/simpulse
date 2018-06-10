@@ -27,28 +27,19 @@ struct phase_model_base;
 // (Currently, the von Mises profile is the only periodic pulse profile implemented in simpulse,
 // although in the future we might implement more profiles and define a 'pulsar_profile' base class.)
 //
-// Constructor syntax:
-//
-//    p = simpulse.von_mises_profile(duty_cycle, detrend, min_internal_nphi=0)
-//
-// where:
-//
-//
 // In order to simulate a pulsar, you need two things: a phase model and a pulse profile.  Then, to do
 // the simulation, you can call either profile.eval_integrated_samples() or profile.add_integrated_samples().
 // These methods take the phase model as a parameter.
 //
 // By default, the profile is normalized so that its peak flux is equal to 1 (before applying the detrending subtraction).
-// To change the normalization, you can pass an 'amplitude' parameter to most of the von_mises_profile methods.  You may
-// find the methods profile.get_single_pulse_signal_to_noise() and profile.get_multi_pulse_signal_to_noise() useful when
-// setting the amplitude.
+// To get/set the amplitude, see below (methods get_peak_flux(), ..., set_multi_pulse_signal_to_noise()).
 //
 // Mathematically, a profile is just a function rho(Phi) which gives the flux 'rho' as a function of pulse phase 'phi'.
 // The von Mises profile is the functional form:
 //
 //       rho(phi) = exp[ -2 kappa sin(pi*phi)^2 ]
 //
-// where kappa is a narrowness parameter, related to the duty cycle by kappa = log(2) / (2 sin^2(pi*D/2)).
+// where kappa is a narrowness parameter, related to the duty cycle D by kappa = log(2) / (2 sin^2(pi*D/2)).
 
 
 class von_mises_profile {
@@ -78,32 +69,37 @@ public:
     //
     // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended
 
-    template<typename T> void eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
-    template<typename T> void add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
-
-    // Returns the instantaneous flux evaluated at pulse phase 'phi'.
-    // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended.
-    double point_eval(double phi, double amplitude=1.0) const;    
+    template<typename T> void eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const;
+    template<typename T> void add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const;
 
 
-    // get_single_pulse_signal_to_noise(): returns the SNR of a single pulse.
-    // get_multi_pulse_signal_to_noise(): returns the SNR of a pulse train.
+    // The routines below are useful for getting or setting the amplitude of the pulsar.
+    // The "multi-pulse signal-to-noise" is the total SNR for a train of pulses with duration 'total_time'.
     //
-    // The SNR calculation accounts for finite time resolution (and detrending, if detrend=True was specified
-    // at construction), and assumes amplitude=1.
+    // The SNR calculations account for finite time resolution (and detrending, if detrend=True was specified
+    // at construction).  Strictly speaking, the calculated SNR is an approximation to the true SNR, which may 
+    // slightly depend on the exact arrival times of the pulses.
     //
-    // Strictly speaking, the return value is an approximation to the true SNR, which may slightly depend
-    // on the exact arrival times of the pulses.
-    //
-    // The 'total_time' argument is the total duration of the pulse train.
-    // The 'dt_sample' argument is the length of each time sample.
-    // The 'pulse_freq' argument is the pulse frequency.
-    // The 'sample_rms' argument is the RMS noise fluctuation in each time sample.
+    // In functions which calculate SNR:
+    //   - The 'total_time' argument is the total duration of the pulse train.
+    //   - The 'dt_sample' argument is the length of each time sample.
+    //   - The 'pulse_freq' argument is the pulse frequency.
+    //   - The 'sample_rms' argument is the RMS noise fluctuation in each time sample.
 
+    double get_peak_flux() const;
+    double get_mean_flux() const;
     double get_single_pulse_signal_to_noise(double dt_sample, double pulse_freq, double sample_rms=1.0) const;
     double get_multi_pulse_signal_to_noise(double total_time, double dt_sample, double pulse_freq, double sample_rms=1.0) const;
 
-    double get_mean_flux() const { return mean_flux; }
+    void set_peak_flux(double peak_flux);
+    void set_mean_flux(double mean_flux);
+    void set_single_pulse_signal_to_noise(double snr, double dt_sample, double pulse_freq, double sample_rms=1.0);
+    void set_multi_pulse_signal_to_noise(double snr, double total_time, double dt_sample, double pulse_freq, double sample_rms=1.0);
+    
+
+    // Returns the instantaneous flux evaluated at pulse phase 'phi'.
+    // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended.
+    double point_eval(double phi) const;    
 
     
     // Returns the Fourier transform of the profile
@@ -121,12 +117,14 @@ public:
 
     // This method is intended for debugging (hence the "_slow"!)
     // Returns the average flux over phase (not time) interval [phi0, phi1].
-    double eval_integrated_sample_slow(double phi0, double phi1, double amplitude=1.0) const;
+    double eval_integrated_sample_slow(double phi0, double phi1) const;
 
 protected:
     const int internal_nphi2;
     const double kappa;
-    double mean_flux = 0.0;
+
+    double _peak_flux = 1.0;      // used internally to represent the amplitude
+    double _mf_multiplier = 0.0;  // ratio (mean_flux / peak_flux), constant after construction
     
     // Note: padded to length (internal_nphi+1), for internal convenience interpolating.
     std::vector<double> detrended_profile;

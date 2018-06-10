@@ -58,7 +58,8 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
       internal_nphi(choose_internal_nphi(duty_cycle_, min_internal_nphi)),   // note: constructor args sanity-checked here
       internal_nphi2(internal_nphi/2 + 1),
       kappa(log(2.0) / (2 * square(sin(M_PI*duty_cycle/2.)))),
-      mean_flux(0.0)   // to be initialized below
+      _peak_flux(1.0),
+      _mf_multiplier(0.0)   // to be initialized below
 {
     this->detrended_profile.resize(internal_nphi+1, 0.0);
     this->detrended_profile_antider.resize(internal_nphi+1, 0.0);
@@ -69,7 +70,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 
     for (int iphi = 0; iphi < internal_nphi; iphi++) {
 	rho[iphi] = _vm_profile(kappa, iphi / double(internal_nphi));
-	mean_flux += rho[iphi] / internal_nphi;
+	_mf_multiplier += rho[iphi] / internal_nphi;
     }
 
     // Compute 'profile_fft'.
@@ -83,7 +84,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
     for (int iphi = 0; iphi < internal_nphi2; iphi++)
 	profile_fft[iphi] = ctmp[iphi].real() / internal_nphi;
 
-    sp_assert(fabs(profile_fft[0] - mean_flux) < 1.0e-13);
+    sp_assert(fabs(profile_fft[0] - _mf_multiplier) < 1.0e-13);
 
     if (detrend)
 	profile_fft[0] = 0.0;
@@ -91,7 +92,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
     // Complete calculation of 'detrended_profile' (by subtracting mean flux and padding by one), and 'detrended_profile_antider'.
 
     for (int iphi = 0; iphi < internal_nphi; iphi++)
-	rho[iphi] -= mean_flux;
+	rho[iphi] -= _mf_multiplier;
 
     rho[internal_nphi] = rho[0];  // pad by one (with periodicity)
 
@@ -162,7 +163,7 @@ struct ihelper {
 
 template<typename Tout>
 inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, const phase_model_base &pm,
-			       double amplitude, double mf, ssize_t internal_nphi, const double *rho,
+			       double peak_flux, double mean_flux, ssize_t internal_nphi, const double *rho,
 			       const double *rho_a, ssize_t phi_block_size, double *phi_tmp)
 {
     // Number of time samples simulated so far.
@@ -198,7 +199,7 @@ inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, cons
 		integral += h1.u * h1._linterp(0.5*h1.u);
 	    }
 
-	    out.process_sample(it, amplitude * (integral/dp + mf));
+	    out.process_sample(it, peak_flux * (integral/dp) + mean_flux);
 	    h0 = h1;
 	}
 
@@ -230,7 +231,7 @@ struct _array_accumulator {
 
 
 template<typename T>
-void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
+void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const
 {
     sp_assert2(nt > 0, "simpulse::von_mises_profile::eval_integrated_samples(): expected nt > 0");
     sp_assert2(t0 < t1, "simpulse::von_mises_profile::eval_integrated_samples(): expected t0 < t1");
@@ -241,8 +242,8 @@ void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ss
 
     _array_overwriter<T> hout(out);
 
-    _integrate_samples(hout, t0, t1, nt, pm, amplitude, 
-		       detrend ? 0.0 : mean_flux,
+    _integrate_samples(hout, t0, t1, nt, pm, _peak_flux,
+		       detrend ? 0.0 : (_mf_multiplier * _peak_flux),
 		       internal_nphi, &detrended_profile[0], 
 		       &detrended_profile_antider[0], 
 		       phi_block_size, &phi_tmp[0]);
@@ -250,7 +251,7 @@ void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ss
 
 
 template<typename T>
-void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
+void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const
 {
     sp_assert2(nt > 0, "simpulse::von_mises_profile::add_integrated_samples(): expected nt > 0");
     sp_assert2(t0 < t1, "simpulse::von_mises_profile::add_integrated_samples(): expected t0 < t1");
@@ -261,20 +262,21 @@ void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssi
 
     _array_accumulator<T> hout(out);
 
-    _integrate_samples(hout, t0, t1, nt, pm, amplitude, 
-		       detrend ? 0.0 : mean_flux,
+    _integrate_samples(hout, t0, t1, nt, pm, _peak_flux,
+		       detrend ? 0.0 : (_mf_multiplier * _peak_flux),
 		       internal_nphi, &detrended_profile[0], 
 		       &detrended_profile_antider[0], 
 		       phi_block_size, &phi_tmp[0]);
 }
 
 
-double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1, double amplitude) const
+double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1) const
 {
     sp_assert2(phi0 < phi1, "simpulse::von_mises_profile::integrate_sample_slow(): expected phi0 < phi1");
 
     const double *rho = &detrended_profile[0];
-    const double mf = detrend ? 0.0 : mean_flux;
+    const double pf = _peak_flux;
+    const double mf = detrend ? 0.0 : (_mf_multiplier * _peak_flux);
 
     double p0 = phi0 * internal_nphi;
     double p1 = phi1 * internal_nphi;
@@ -298,20 +300,20 @@ double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1, 
 
     sp_assert(den > 0.0);
 
-    return amplitude * (num/den + mf);
+    return pf * (num/den) + mf;
 }
 
 
-double von_mises_profile::point_eval(double phi, double amplitude) const
+double von_mises_profile::point_eval(double phi) const
 {
-    const double offset = detrend ? mean_flux : 0.0;
-    return amplitude * (_vm_profile(kappa, phi) - offset);
+    double offset = detrend ? (_mf_multiplier * _peak_flux) : 0.0;
+    return _peak_flux * _vm_profile(kappa, phi) - offset;
 }
 
 
 // -------------------------------------------------------------------------------------------------
 //
-// Signal-to-noise calculation
+// Member functions which get/set the normalization.
 
 
 // Helper method: returns expectation value <rho^2>, where expectation value is taken over phi,
@@ -327,6 +329,17 @@ double von_mises_profile::_get_rho2(double dphi) const
     }
 
     return ret;
+}
+
+
+double von_mises_profile::get_peak_flux() const
+{
+    return _peak_flux;
+}
+
+double von_mises_profile::get_mean_flux() const
+{
+    return _mf_multiplier * _peak_flux;
 }
 
 
@@ -354,6 +367,29 @@ double von_mises_profile::get_multi_pulse_signal_to_noise(double total_time, dou
 }
 
 
+void von_mises_profile::set_peak_flux(double peak_flux)
+{
+    this->_peak_flux = peak_flux;
+}
+
+void von_mises_profile::set_mean_flux(double mean_flux)
+{
+    this->_peak_flux = mean_flux / _mf_multiplier;
+}
+
+void von_mises_profile::set_single_pulse_signal_to_noise(double snr, double dt_sample, double pulse_freq, double sample_rms)
+{
+    double current_snr = get_single_pulse_signal_to_noise(dt_sample, pulse_freq, sample_rms);
+    this->_peak_flux *= (snr / current_snr);
+}
+
+void von_mises_profile::set_multi_pulse_signal_to_noise(double snr, double total_time, double dt_sample, double pulse_freq, double sample_rms)
+{
+    double current_snr = get_multi_pulse_signal_to_noise(total_time, dt_sample, pulse_freq, sample_rms);
+    this->_peak_flux *= (snr / current_snr);
+}
+
+
 template<typename T>
 void von_mises_profile::get_profile_fft(T *out, int nout) const
 {
@@ -370,9 +406,12 @@ void von_mises_profile::get_profile_fft(T *out, int nout) const
 }
 
 
+// -------------------------------------------------------------------------------------------------
+
+
 #define INSTANTIATE_TEMPLATES(T) \
-    template void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const; \
-    template void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const; \
+    template void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const; \
+    template void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const; \
     template void von_mises_profile::get_profile_fft(T *out, int nout) const
 
 INSTANTIATE_TEMPLATES(float);
