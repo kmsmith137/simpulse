@@ -13,5 +13,4 @@ target_link_libraries(simpulse_pybind11 PUBLIC simpulse)
 
 install(TARGETS simpulse_pybind11
   COMPONENT python
-  LIBRARY DESTINATION ${PYTHON_MODULE_INSTALL_DIR}/simpulse)
-
+  LIBRARY DESTINATION ${PYTHON_MODULE_INSTALL_DIR})
