@@ -1,3 +1,4 @@
+#include <iostream>
 #include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"
@@ -182,8 +183,8 @@ inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, cons
 	ihelper h0(phi_tmp[0], internal_nphi, rho);
 	
 	for (ssize_t it = nt0; it < nt1; it++) {
-	    // Loop invariant: at top, 'h0' corresponds to phase phi_tmp[it].
-	    ihelper h1(phi_tmp[it+1], internal_nphi, rho);
+	    // Loop invariant: at top, h0 corresponds to time it, and h1 corresponds to time (it+1).
+	    ihelper h1(phi_tmp[it-nt0+1], internal_nphi, rho);
 	    double dp = h1.p - h0.p;
 	    double integral;
 
