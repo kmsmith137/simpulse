@@ -157,22 +157,19 @@ struct ihelper {
 };
 
 
-void von_mises_profile::eval_integrated_samples(double *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
+// This is really ugly, is there a better way?
+//
+// The inline function _integrate_samples() forms the "body" of eval_integrated_samples() 
+// or add_integrated_samples().  It needs a lot of arguments since it is not a member function!
+//
+// The template argument Tout is an inline "output" class which is called in the innermost loop, 
+// and updates the output array.
+
+template<typename Tout>
+inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, const phase_model_base &pm,
+			       double amplitude, double mf, ssize_t internal_nphi, const double *rho,
+			       const double *rho_a, ssize_t phi_block_size, double *phi_tmp)
 {
-    if (_unlikely(nt <= 0))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected nt > 0");
-    if (_unlikely(t0 >= t1))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected t0 < t1");
-    if (_unlikely(!out))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): 'out' is a null pointer");
-
-    const double *rho = &detrended_profile[0];
-    const double *rho_a = &detrended_profile_antider[0];
-    const double mf = detrend ? 0.0 : mean_flux;
-
-    if (!phi_tmp.size())
-	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
-
     // Number of time samples simulated so far.
     ssize_t nt0 = 0;
 
@@ -207,12 +204,80 @@ void von_mises_profile::eval_integrated_samples(double *out, double t0, double t
 		integral += h1.u * h1._linterp(0.5*h1.u);
 	    }
 
-	    out[it] = amplitude * (integral/dp + mf);
+	    out.process_sample(it, amplitude * (integral/dp + mf));
 	    h0 = h1;
 	}
 
 	nt0 = nt1;
-    }
+    }    
+}
+
+
+// This helper class is used as the "output class" in _integrate_samples(),
+// when _integrate_samples() is called from eval_integrated_samples().
+
+template<typename T>
+struct _array_overwriter {
+    T *out;
+    _array_overwriter(T *out_) : out(out_) { }
+    inline void process_sample(ssize_t it, double val) { out[it] = T(val); }
+};
+
+
+// This helper class is used as the "output class" in _integrate_samples(),
+// when _integrate_samples() is called from eval_integrated_samples().
+
+template<typename T>
+struct _array_accumulator {
+    T *out;
+    _array_accumulator(T *out_) : out(out_) { }
+    inline void process_sample(ssize_t it, double val) { out[it] += T(val); }
+};
+
+
+template<typename T>
+void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
+{
+    if (_unlikely(nt <= 0))
+	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected nt > 0");
+    if (_unlikely(t0 >= t1))
+	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected t0 < t1");
+    if (_unlikely(!out))
+	throw runtime_error("von_mises_profile::eval_integrated_samples(): 'out' is a null pointer");
+
+    if (!phi_tmp.size())
+	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
+
+    _array_overwriter<T> hout(out);
+
+    _integrate_samples(hout, t0, t1, nt, pm, amplitude, 
+		       detrend ? 0.0 : mean_flux,
+		       internal_nphi, &detrended_profile[0], 
+		       &detrended_profile_antider[0], 
+		       phi_block_size, &phi_tmp[0]);
+}
+
+
+template<typename T>
+void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
+{
+    if (_unlikely(nt <= 0))
+	throw runtime_error("von_mises_profile::add_integrated_samples(): expected nt > 0");
+    if (_unlikely(t0 >= t1))
+	throw runtime_error("von_mises_profile::add_integrated_samples(): expected t0 < t1");
+    if (_unlikely(!out))
+	throw runtime_error("von_mises_profile::add_integrated_samples(): 'out' is a null pointer");
+
+    if (!phi_tmp.size())
+	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
+
+    _array_accumulator<T> hout(out);
+
+    _integrate_samples(hout, t0, t1, nt, pm, amplitude, 
+		       detrend ? 0.0 : mean_flux,
+		       internal_nphi, &detrended_profile[0], 
+		       &detrended_profile_antider[0], 
+		       phi_block_size, &phi_tmp[0]);
 }
 
 
@@ -326,9 +391,13 @@ void von_mises_profile::get_profile_fft(T *out, int nout) const
 }
 
 
-// Instantiate von_mises_profile::get_profile_fft() for T=float,double.
-template void von_mises_profile::get_profile_fft(float *out, int nout) const;
-template void von_mises_profile::get_profile_fft(double *out, int nout) const;
+#define INSTANTIATE_TEMPLATES(T) \
+    template void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const; \
+    template void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const; \
+    template void von_mises_profile::get_profile_fft(T *out, int nout) const
+
+INSTANTIATE_TEMPLATES(float);
+INSTANTIATE_TEMPLATES(double);
 
 
 }  // namespace simpulse

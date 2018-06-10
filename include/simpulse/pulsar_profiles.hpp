@@ -78,9 +78,8 @@ public:
     //
     // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended
 
-    void eval_integrated_samples(double *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
-
-    // void add_integrated_samples(double *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
+    template<typename T> void eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
+    template<typename T> void add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude=1.0) const;
 
     // Returns the instantaneous flux evaluated at pulse phase 'phi'.
     // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended.
