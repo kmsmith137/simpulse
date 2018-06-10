@@ -100,10 +100,7 @@ execute_process(
 
 
 # 'make uninstall' needs to come after determination of PYTHON_MODULE_INSTALL_DIR
-add_custom_target(
-  uninstall
-  COMMAND ${PROJECT_SOURCE_DIR}/cmake/uninstall.py ${CMAKE_INSTALL_PREFIX} ${PYTHON_MODULE_INSTALL_DIR}
-)
+add_custom_target(uninstall COMMAND ${PROJECT_SOURCE_DIR}/cmake/uninstall.py)
 
 
 add_subdirectory(cpp)
