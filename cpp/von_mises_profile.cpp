@@ -33,21 +33,16 @@ inline double _linterp(double u, double f0, double f1)
 
 static int choose_internal_nphi(double duty_cycle, int min_internal_nphi=0)
 {
-    if (duty_cycle <= 0.0)
-	throw runtime_error("simpulse::von_mises_profile: duty_cycle must be >= 0");
-    if (duty_cycle >= 0.5)
-	throw runtime_error("simpulse::von_mises_profile: duty_cycle must be < 0.5");
+    sp_assert2(duty_cycle > 0.0, "simpulse::von_mises_profile: duty_cycle must be > 0");
+    sp_assert2(duty_cycle < 0.5, "simpulse::von_mises_profile: duty_cycle must be < 0.5");
 
     // No fundamental reason for these restrictions, but violating them is probably unintentional!
     // Note that in the limit duty_cyle->0, this implementation is inefficient, and it would be better
     // to supply an alternate implementation similar to single_pulse.
 
-    if (duty_cycle < 1.0e-4)
-	throw runtime_error("simpulse::von_mises_profile: we currently don't support duty cycles < 1.0e-4");
-    if (min_internal_nphi < 0)
-	throw runtime_error("simpulse::von_mises_profile: 'min_internal_nphi' argument must be >= 0");
-    if (min_internal_nphi > 65536)
-	throw runtime_error("simpulse::von_mises_profile: we currently don't support nphi >= 65536");    
+    sp_assert2(duty_cycle >= 1.0e-4, "simpulse::von_mises_profile: we currently don't support duty cycles < 1.0e-4");
+    sp_assert2(min_internal_nphi >= 0, "simpulse::von_mises_profile: 'min_internal_nphi' argument must be >= 0");
+    sp_assert2(min_internal_nphi <= 65536, "simpulse::von_mises_profile: we currently don't support nphi >= 65536");
 
     // Ultra-conservative value
     // FIXME I'd like to understand better how to choose this
@@ -88,7 +83,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
     for (int iphi = 0; iphi < internal_nphi2; iphi++)
 	profile_fft[iphi] = ctmp[iphi].real() / internal_nphi;
 
-    simpulse_assert(fabs(profile_fft[0] - mean_flux) < 1.0e-13);
+    sp_assert(fabs(profile_fft[0] - mean_flux) < 1.0e-13);
 
     if (detrend)
 	profile_fft[0] = 0.0;
@@ -105,7 +100,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 	rho_a[iphi+1] = rho_a[iphi] + x;
     }
 
-    simpulse_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-11);
+    sp_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-11);
 }
 
 
@@ -141,9 +136,9 @@ struct ihelper {
 	u = x - i;
 
 #if DEBUG
-	simpulse_assert((i >= 0) && (i < n));
-	simpulse_assert((u >= -1.0e-12) && (u <= 1+1.0e-12));
-	simpulse_assert(fabs(p - j*n - i - u) < (1.0e-12 * (1 + fabs(p))));
+	sp_assert((i >= 0) && (i < n));
+	sp_assert((u >= -1.0e-12) && (u <= 1+1.0e-12));
+	sp_assert(fabs(p - j*n - i - u) < (1.0e-12 * (1 + fabs(p))));
 #endif
 
 	rho0 = rho[i];
@@ -191,8 +186,7 @@ inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, cons
 	    double dp = h1.p - h0.p;
 	    double integral;
 
-	    if (_unlikely(dp <= 0))
-		throw runtime_error("von_mises_profile::eval_integrated_samples(): phase model is not monotone increasing?!");
+	    sp_assert2(dp > 0.0, "von_mises_profile::eval_integrated_samples(): phase model is not monotone increasing?!");
 
 	    // I put way too much thought into writing the logic below in a way which minimizes roundoff error!
 
@@ -238,12 +232,9 @@ struct _array_accumulator {
 template<typename T>
 void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
 {
-    if (_unlikely(nt <= 0))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected nt > 0");
-    if (_unlikely(t0 >= t1))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): expected t0 < t1");
-    if (_unlikely(!out))
-	throw runtime_error("von_mises_profile::eval_integrated_samples(): 'out' is a null pointer");
+    sp_assert2(nt > 0, "simpulse::von_mises_profile::eval_integrated_samples(): expected nt > 0");
+    sp_assert2(t0 < t1, "simpulse::von_mises_profile::eval_integrated_samples(): expected t0 < t1");
+    sp_assert2(out, "simpulse::von_mises_profile::eval_integrated_samples(): 'out' is a null pointer");
 
     if (!phi_tmp.size())
 	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
@@ -261,12 +252,9 @@ void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ss
 template<typename T>
 void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude) const
 {
-    if (_unlikely(nt <= 0))
-	throw runtime_error("von_mises_profile::add_integrated_samples(): expected nt > 0");
-    if (_unlikely(t0 >= t1))
-	throw runtime_error("von_mises_profile::add_integrated_samples(): expected t0 < t1");
-    if (_unlikely(!out))
-	throw runtime_error("von_mises_profile::add_integrated_samples(): 'out' is a null pointer");
+    sp_assert2(nt > 0, "simpulse::von_mises_profile::add_integrated_samples(): expected nt > 0");
+    sp_assert2(t0 < t1, "simpulse::von_mises_profile::add_integrated_samples(): expected t0 < t1");
+    sp_assert2(out, "simpulse::von_mises_profile::add_integrated_samples(): 'out' is a null pointer");
 
     if (!phi_tmp.size())
 	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
@@ -283,8 +271,7 @@ void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssi
 
 double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1, double amplitude) const
 {
-    if (_unlikely(phi0 >= phi1))
-	throw runtime_error("von_mises_profile::integrate_sample_slow(): expected phi0 < phi1");
+    sp_assert2(phi0 < phi1, "simpulse::von_mises_profile::integrate_sample_slow(): expected phi0 < phi1");
 
     const double *rho = &detrended_profile[0];
     const double mf = detrend ? 0.0 : mean_flux;
@@ -309,7 +296,7 @@ double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1, 
 	i0++;
     }
 
-    simpulse_assert(den > 0.0);
+    sp_assert(den > 0.0);
 
     return amplitude * (num/den + mf);
 }
@@ -345,12 +332,9 @@ double von_mises_profile::_get_rho2(double dphi) const
 
 double von_mises_profile::get_single_pulse_signal_to_noise(double dt_sample, double pulse_freq, double sample_rms) const
 {
-    if (_unlikely(dt_sample <= 0.0))
-	throw runtime_error("von_mises_profile::get_single_pulse_signal_to_noise(): expected dt_sample > 0.0");
-    if (_unlikely(pulse_freq <= 0.0))
-	throw runtime_error("von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
-    if (_unlikely(sample_rms <= 0.0))
-	throw runtime_error("von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
+    sp_assert2(dt_sample > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected dt_sample > 0.0");
+    sp_assert2(pulse_freq > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
+    sp_assert2(sample_rms > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
 
     double rho2 = _get_rho2(pulse_freq * dt_sample);
     return sqrt(rho2 / (pulse_freq * dt_sample)) / sample_rms;
@@ -359,14 +343,11 @@ double von_mises_profile::get_single_pulse_signal_to_noise(double dt_sample, dou
 
 double von_mises_profile::get_multi_pulse_signal_to_noise(double total_time, double dt_sample, double pulse_freq, double sample_rms) const
 {
-    if (_unlikely(total_time <= 0.0))
-	throw runtime_error("von_mises_profile::get_multi_pulse_signal_to_noise(): expected total_time > 0.0");
-    if (_unlikely(dt_sample <= 0.0))
-	throw runtime_error("von_mises_profile::get_multi_pulse_signal_to_noise(): expected dt_sample > 0.0");
-    if (_unlikely(pulse_freq <= 0.0))
-	throw runtime_error("von_mises_profile::get_multi_pulse_signal_to_noise(): expected pulse_freq > 0.0");
-    if (_unlikely(sample_rms <= 0.0))
-	throw runtime_error("von_mises_profile::get_multi_pulse_signal_to_noise(): expected pulse_freq > 0.0");
+    sp_assert2(total_time > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected total_time > 0.0");
+    sp_assert2(dt_sample > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected dt_sample > 0.0");
+    sp_assert2(pulse_freq > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
+    sp_assert2(sample_rms > 0.0, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected pulse_freq > 0.0");
+    sp_assert2(total_time > dt_sample, "simpulse::von_mises_profile::get_single_pulse_signal_to_noise(): expected total_time > dt_sample");
 
     double rho2 = _get_rho2(pulse_freq * dt_sample);
     return sqrt((total_time * rho2) / dt_sample) / sample_rms;
@@ -376,10 +357,8 @@ double von_mises_profile::get_multi_pulse_signal_to_noise(double total_time, dou
 template<typename T>
 void von_mises_profile::get_profile_fft(T *out, int nout) const
 {
-    if (!out)
-	throw runtime_error("simpulse::von_mises_profile::get_profile_fft(): NULL pointer passed as 'out' argument");
-    if (nout <= 0)
-	throw runtime_error("simpulse::von_mises_profile::get_profile_fft(): the 'nout' argument must be > 0");
+    sp_assert2(nout > 0, "simpulse::von_mises_profile::get_profile_fft(): the 'nout' argument must be > 0");
+    sp_assert2(out, "simpulse::von_mises_profile::get_profile_fft(): NULL pointer passed as 'out' argument");
 
     int m = min(nout, internal_nphi2);
 

@@ -17,13 +17,14 @@
 #define _unlikely(cond)  (__builtin_expect(cond,0))
 #endif
 
-// simpulse_assert(): like assert, but throws an exception in order to work smoothly with python.
-#define simpulse_assert(cond) simpulse_assert2(cond, __LINE__)
+// sp_assert(): like assert, but throws an exception in order to work smoothly with python.
+#define sp_assert(cond) \
+    sp_assert2(cond, "simpulse: assertion '" __STRING(cond) "' failed (" __FILE__ ":" __STRING(__LINE__) ")\n")
 
-#define simpulse_assert2(cond,line) \
+// sp_assert2(): use customized error message
+#define sp_assert2(cond,msg) \
     do { \
         if (_unlikely(!(cond))) { \
-	    const char *msg = "simpulse: assertion '" __STRING(cond) "' failed (" __FILE__ ":" __STRING(line) ")\n"; \
 	    throw std::runtime_error(msg); \
 	} \
     } while (0)

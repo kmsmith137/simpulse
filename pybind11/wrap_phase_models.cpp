@@ -1,4 +1,5 @@
 #include "simpulse_pybind11.hpp"
+#include "../include/simpulse/internals.hpp"  // sp_assert()
 #include "../include/simpulse/pulsar_phase_models.hpp"
 
 #include <pybind11/numpy.h>
@@ -29,9 +30,7 @@ void wrap_phase_model_base(py::module &m)
 
     auto eval_phi_sequence = [](phase_model_base &self, double t0, double t1, ssize_t nsamples, int nderivs)
     {
-	if (nsamples <= 0)
-	    throw runtime_error("simpulse::phase_model::eval_phi_sequence(): expected nsamples > 0");
-
+	sp_assert2(nsamples > 0, "simpulse::phase_model::eval_phi_sequence(): expected nsamples > 0");
 	py::array_t<double> ret{ size_t(nsamples) };
 
 	self.eval_phi_sequence(t0, t1, nsamples, ret.mutable_data(), nderivs);

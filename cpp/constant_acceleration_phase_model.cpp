@@ -13,8 +13,7 @@ namespace simpulse {
 constant_acceleration_phase_model::constant_acceleration_phase_model(double phi0_, double f0_, double fdot_, double t0_)
     : phi0(phi0_), f0(f0_), fdot(fdot_), t0(t0_)
 {
-    if (f0 <= 0.0)
-	throw std::runtime_error("simpulse::constant_acceleration_phase_model constructor: expected f0 > 0");
+    sp_assert2(f0 > 0.0, "simpulse::constant_acceleration_phase_model constructor: expected f0 > 0");
 }
 
 
@@ -30,8 +29,7 @@ double constant_acceleration_phase_model::eval_phi(double t, int nderivs) const
     if (nderivs == 2)
 	return fdot;
 
-    if (_unlikely(nderivs < 0))
-	throw runtime_error("simpulse::phase_model::eval() was called with negative 'nderivs'");
+    sp_assert2(nderivs > 2, "simpulse::phase_model::eval() was called with negative 'nderivs'");
     
     return 0.0;  // derivs > 2
 }

@@ -1,7 +1,7 @@
 #include "simpulse_pybind11.hpp"
 #include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/pulsar_profiles.hpp"
-#include "../include/simpulse/internals.hpp"   // simpulse_assert()
+#include "../include/simpulse/internals.hpp"   // sp_assert()
 
 #include <pybind11/numpy.h>
 
@@ -61,9 +61,7 @@ void wrap_von_mises_profile(py::module &m)
 
     auto eval_integrated_samples = [](von_mises_profile &self, double t0, double t1, ssize_t nt, const phase_model_base &pm, double amplitude)
     {
-	if (nt <= 0)
-	    throw runtime_error("simpulse::von_mises_profile::eval_integrated_sample(): expected nt > 0");
-
+	sp_assert2(nt > 0, "simpulse::von_mises_profile::eval_integrated_sample(): expected nt > 0");
 	py::array_t<double> ret{ size_t(nt) };
 
 	self.eval_integrated_samples(ret.mutable_data(), t0, t1, nt, pm, amplitude);
@@ -73,8 +71,7 @@ void wrap_von_mises_profile(py::module &m)
 
     auto get_profile_fft = [](von_mises_profile &self, int nout)
     {
-	if (nout < 0)
-	    throw runtime_error("simpulse::von_mises_profile::get_profile_fft(): expected nout >= 0");
+	sp_assert2(nout >= 0, "simpulse::von_mises_profile::get_profile_fft(): expected nout >= 0");
 
 	if (nout == 0)
 	    nout = self.internal_nphi/2 + 1;

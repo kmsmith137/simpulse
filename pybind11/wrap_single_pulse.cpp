@@ -1,6 +1,6 @@
 #include "simpulse_pybind11.hpp"
 #include "../include/simpulse/single_pulse.hpp"
-#include "../include/simpulse/internals.hpp"   // simpulse_assert()
+#include "../include/simpulse/internals.hpp"   // sp_assert()
 
 #include <pybind11/numpy.h>
 
@@ -131,8 +131,8 @@ void wrap_single_pulse(py::module &m)
 	    // Make copy
 	    out = py::array::ensure(out, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_WRITEABLE | NPY_ARRAY_UPDATEIFCOPY);
 	    stride = out.strides();
-	    simpulse_assert(stride[0] == self.nfreq * itemsize);
-	    simpulse_assert(stride[1] == itemsize);
+	    sp_assert(stride[0] == self.nfreq * itemsize);
+	    sp_assert(stride[1] == itemsize);
 	}
 
 	// The "c" prefix means "in multiples of 'itemsize', not sizeof(char)".
@@ -145,11 +145,11 @@ void wrap_single_pulse(py::module &m)
 	}
 
 	if (is_float) {
-	    simpulse_assert(itemsize == sizeof(float));
+	    sp_assert(itemsize == sizeof(float));
 	    self.add_to_timestream(reinterpret_cast<float *> (out.mutable_data()) + coffset, t0, t1, shape[1], cstride);
 	}
 	else if (is_double) {
-	    simpulse_assert(itemsize == sizeof(double));
+	    sp_assert(itemsize == sizeof(double));
 	    self.add_to_timestream(reinterpret_cast<double *> (out.mutable_data()) + coffset, t0, t1, shape[1], cstride);
 	}
     };

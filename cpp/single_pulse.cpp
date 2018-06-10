@@ -17,15 +17,15 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
       dm(dm_), sm(sm_), intrinsic_width(intrinsic_width_), fluence(fluence_), 
       spectral_index(spectral_index_), undispersed_arrival_time(undispersed_arrival_time_)
 {
-    simpulse_assert(pulse_nt >= 64);   // using fewer time samples than this is probably a mistake
-    simpulse_assert(nfreq > 0);
-    simpulse_assert(freq_lo_MHz > 0.0);
-    simpulse_assert(freq_hi_MHz > freq_lo_MHz);
+    sp_assert(pulse_nt >= 64);   // using fewer time samples than this is probably a mistake
+    sp_assert(nfreq > 0);
+    sp_assert(freq_lo_MHz > 0.0);
+    sp_assert(freq_hi_MHz > freq_lo_MHz);
 
-    simpulse_assert(dm >= 0.0);
-    simpulse_assert(sm >= 0.0);
-    simpulse_assert(intrinsic_width >= 0.0);
-    simpulse_assert(fluence >= 0.0);
+    sp_assert(dm >= 0.0);
+    sp_assert(sm >= 0.0);
+    sp_assert(intrinsic_width >= 0.0);
+    sp_assert(fluence >= 0.0);
 
     // Implementing delta function pulses wouldn't be a big deal, but creates corner cases
     // and so far I haven't seen a strong reason to implement it.
@@ -64,7 +64,7 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 	double tc = (dm_delay0 + dm_delay1) / 2.;         // pulse center in channel
 	double dt = tc - (t0 + (t1-t0)/(2.*pulse_nt));    // pulse center relative to first sample
 
-	simpulse_assert(t0 < t1);
+	sp_assert(t0 < t1);
 	this->pulse_t0[ifreq] = t0;
 	this->pulse_t1[ifreq] = t1;
 
@@ -130,7 +130,7 @@ void single_pulse::_compute_freq_wt()
 void single_pulse::set_fluence(double fluence_)
 {
     this->fluence = fluence_;
-    simpulse_assert(fluence_ >= 0.0);
+    sp_assert(fluence_ >= 0.0);
 }
 
 void single_pulse::set_spectral_index(double spectral_index_)
@@ -163,7 +163,7 @@ inline double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
     
     int is = (int)s;
     double ds = s - is;
-    simpulse_assert(is >= 0 && is < pulse_nt);
+    sp_assert(is >= 0 && is < pulse_nt);
     
     return (1-ds)*arr[is] + (ds)*arr[is+1];
 }
@@ -179,10 +179,10 @@ inline double _interpolate_cumsum(int pulse_nt, const double *arr, double s)
 template<typename T>
 void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const
 {
-    simpulse_assert(out);
-    simpulse_assert(out_nt > 0);
-    simpulse_assert(out_t0 < out_t1);
-    simpulse_assert(ifreq >= 0 && ifreq < nfreq);
+    sp_assert(out);
+    sp_assert(out_nt > 0);
+    sp_assert(out_t0 < out_t1);
+    sp_assert(ifreq >= 0 && ifreq < nfreq);
 
     // Convert input times to "sample coords"
     double s0 = pulse_nt * (out_t0 - undispersed_arrival_time - pulse_t0[ifreq]) / (pulse_t1[ifreq] - pulse_t0[ifreq]);
@@ -209,10 +209,10 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
     if (stride == 0)
 	stride = out_nt;
 
-    simpulse_assert(out);
-    simpulse_assert(out_nt > 0);
-    simpulse_assert(out_t0 < out_t1);
-    simpulse_assert(abs(stride) >= out_nt);   // allow negative stride as explained in simpulse.hpp
+    sp_assert(out);
+    sp_assert(out_nt > 0);
+    sp_assert(out_t0 < out_t1);
+    sp_assert(abs(stride) >= out_nt);   // allow negative stride as explained in simpulse.hpp
     
     // Return early if data does not overlap pulse
     if (out_t0 > undispersed_arrival_time + max_t1)
@@ -227,8 +227,8 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
 
 double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, double sample_t0) const
 {
-    simpulse_assert(sample_dt > 0.0);
-    simpulse_assert(sample_rms > 0.0);
+    sp_assert(sample_dt > 0.0);
+    sp_assert(sample_rms > 0.0);
 
     int nsamp_max = (int)(max_dt/sample_dt) + 3;
     vector<double> buf(nsamp_max, 0.0);
@@ -242,7 +242,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, do
 
 	ssize_t j = round_down(s0);
 	ssize_t k = round_up(s1);
-	simpulse_assert(k-j <= nsamp_max);
+	sp_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
 	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
@@ -257,10 +257,8 @@ double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, do
 
 double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_rms, const double *channel_weights, double sample_t0) const
 {
-    if (sample_rms == nullptr)
-	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): sample_rms pointer was NULL");
-    if (sample_dt <= 0.0)
-	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): sample_dt must be positive");
+    sp_assert2(sample_rms, "simpulse::single_pulse::get_signal_to_noise(): sample_rms pointer was NULL");
+    sp_assert2(sample_dt > 0.0, "simpulse::single_pulse::get_signal_to_noise(): sample_dt must be positive");
 
     for (int ifreq = 0; ifreq < nfreq; ifreq++) {
 	if (sample_rms[ifreq] < 0.0)
@@ -277,7 +275,9 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 
 	for (int ifreq = 0; ifreq < nfreq; ifreq++) {
 	    if (sample_rms[ifreq] <= 0.0)
-		throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): if 'channel_weights' pointer is unspecified, then all sample_rms values must be positive");
+		throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): if 'channel_weights' pointer is unspecified,"
+				    " then all sample_rms values must be positive");
+
 	    wtmp[ifreq] = 1.0 / (sample_rms[ifreq] * sample_rms[ifreq]);
 	}
     }
@@ -295,7 +295,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 
 	ssize_t j = round_down(s0);
 	ssize_t k = round_up(s1);
-	simpulse_assert(k-j <= nsamp_max);
+	sp_assert(k-j <= nsamp_max);
 
 	memset(&buf[0], 0, nsamp_max * sizeof(double));
 	_add_pulse_to_frequency_channel(&buf[0], sample_t0 + j*sample_dt, sample_t0 + k*sample_dt, k-j, ifreq, 1.0);
@@ -309,7 +309,8 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
     }
 
     if (noise_var <= 0.0)
-	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): computed noise variance is zero, this means that too many sample_rms (or channel_weights) values were zero");
+	throw runtime_error("simpulse::single_pulse::get_signal_to_noise(): computed noise variance is zero."
+			    "  This means that too many sample_rms (or channel_weights) values were zero");
 
     return sig_ampl / sqrt(noise_var);
 }
