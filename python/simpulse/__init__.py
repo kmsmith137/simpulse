@@ -1,5 +1,7 @@
 """simpulse: simulating pulses in radio astronomy"""
 
+from . import utils
+
 try:
     from .simpulse_pybind11 import *
 except:
