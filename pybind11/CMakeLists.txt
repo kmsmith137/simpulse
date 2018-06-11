@@ -9,8 +9,12 @@ pybind11_add_module(simpulse_pybind11
 )
 
 # FIXME do I want PUBLIC or PRIVATE here?
-target_link_libraries(simpulse_pybind11 PUBLIC simpulse)
+target_link_libraries(simpulse_pybind11 PUBLIC libsimpulse)
 
 install(TARGETS simpulse_pybind11
   COMPONENT python
   LIBRARY DESTINATION ${PYTHON_MODULE_INSTALL_DIR})
+
+# Set cmake-global variable 'simpulse_pybind11_basename'.
+# This is useful in other CMakeLists.txt files, in places where we want to symlink 'simpulse_pybind11.so' into the build directory.
+set(simpulse_pybind11_basename "simpulse_pybind11${PYTHON_MODULE_EXTENSION}" CACHE INTERNAL "")

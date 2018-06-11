@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8.12)
-
 project(simpulse)
 set(CMAKE_MACOSX_RPATH 0)   # needed to avoid warning from 'cmake'
 
@@ -107,6 +106,24 @@ add_subdirectory(cpp)
 add_subdirectory(include)
 add_subdirectory(pybind11)
 add_subdirectory(python)
+# add_subdirectory(tests)
+# add_subdirectory(sphinx)
+
+
+# Symlink python modules into toplevel directory.
+# Note: when cutting-and-pasting this boilerplate into other CMakeLists.txt files,
+# don't forget to change 'toplevel_symlinks' to 'SUBDIR_symlinks'.
+
+add_custom_target(toplevel_symlinks ALL DEPENDS ${simpulse_pybind11_basename} simpulse)
+
+add_custom_command(OUTPUT ${simpulse_pybind11_basename}
+                   COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py $<TARGET_FILE:simpulse_pybind11> ${simpulse_pybind11_basename})
+
+add_custom_command(OUTPUT simpulse
+                   COMMAND ln -s python/simpulse simpulse)
+
+
+####################################################################################################
 
 
 message("")
