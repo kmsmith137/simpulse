@@ -48,10 +48,10 @@ def test_eval_integrated_samples():
     test_eval_integrated_samples_instance(pm, vm, t0, t1, nt)
 
 
-niter = 100000
-for iter in xrange(100000):
+niter = 10000
+for iter in xrange(niter):
     if iter % 1000 == 0:
         print 'iteration %d/%d' % (iter, niter)
     test_eval_integrated_samples()
 
-print
+print 'YAY'

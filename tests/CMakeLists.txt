@@ -1,4 +1,13 @@
-configure_file(test-pulse.py test-pulse.py COPYONLY)
+link_directories(${CMAKE_SOURCE_DIR}/cpp)
+link_directories(${CMAKE_SOURCE_DIR}/pybind11)
+
+# List of all unit tests which will be run by 'make test'.
+# When adding a new unit test, don't forget to add it here!
+
+add_custom_target(
+   check DEPENDS 
+   run-test-pulse
+)
 
 
 ####################################################################################################
@@ -20,3 +29,17 @@ add_custom_command(OUTPUT simpulse
 
 
 ####################################################################################################
+
+
+add_custom_command(
+    OUTPUT test-pulse-dontedit.py
+    COMMAND cp -f ${PROJECT_SOURCE_DIR}/tests/test-pulse.py test-pulse-dontedit.py
+    DEPENDS test-pulse.py
+)
+
+# FIXME when more unit tests are added, how to avoid repeating dependencies?
+add_custom_command(
+   OUTPUT run-test-pulse
+   COMMAND ./test-pulse-dontedit.py && touch run-test-pulse
+   DEPENDS test-pulse-dontedit.py tests_symlinks simpulse_pybind11 libsimpulse ../simpulse/__init__.py ../python/utils.py
+)
