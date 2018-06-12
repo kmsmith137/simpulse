@@ -9,7 +9,7 @@ pybind11_add_module(simpulse_pybind11
 )
 
 # FIXME do I want PUBLIC or PRIVATE here?
-target_link_libraries(simpulse_pybind11 PUBLIC libsimpulse)
+target_link_libraries(simpulse_pybind11 PUBLIC simpulse)
 
 install(TARGETS simpulse_pybind11
   COMPONENT python

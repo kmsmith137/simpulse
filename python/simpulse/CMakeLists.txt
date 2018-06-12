@@ -3,7 +3,7 @@ install(FILES
   utils.py
   DESTINATION ${PYTHON_MODULE_INSTALL_DIR}/simpulse)
 
-# Copy python files into 'build/python/proton', so they can be imported
+# Copy python files into 'build/python/simpulse', so they can be imported
 # from the build directory without 'make install'.
 #
 # FIXME what happens for an in-source build?  Does this still work?

@@ -12,20 +12,24 @@ add_custom_target(
 
 ####################################################################################################
 #
-# Symlink python modules into 'tests' directory.
+#
+# Symlink python modules into toplevel directory.
+#
+# Note that we symlink 'python/simpulse' in add_custom_target(), but symlink simpulse_pybind11.so in add_custom_command().
+# It would be better to use add_custom_command() for both, but due to artificial cmake constraints, we can't have an output
+# named 'simpulse' and a library named 'libsimpulse.so' in the same project.
+#
+# FIXME: this has the disadvantage that the 'python/simpulse' symlink doesn't get cleaned up by 'make clean'.  Can this be fixed?
 #
 # Note: when cutting-and-pasting this boilerplate into other CMakeLists.txt files,
 # don't forget to change 'tests_symlinks' to 'OTHERDIR_symlinks'.
 
 
-add_custom_target(tests_symlinks ALL DEPENDS ${simpulse_pybind11_basename} simpulse)
+add_custom_target(tests_symlinks ALL DEPENDS ${simpulse_pybind11_basename}
+                  COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py python/simpulse simpulse)
 
 add_custom_command(OUTPUT ${simpulse_pybind11_basename}
-                   COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py $<TARGET_FILE:simpulse_pybind11> ${simpulse_pybind11_basename}
-                   DEPENDS simpulse_pybind11)
-
-add_custom_command(OUTPUT simpulse
-                   COMMAND ln -s ../python/simpulse simpulse)
+                   COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py $<TARGET_FILE:simpulse_pybind11> ${simpulse_pybind11_basename})
 
 
 ####################################################################################################
@@ -41,5 +45,5 @@ add_custom_command(
 add_custom_command(
    OUTPUT run-test-pulse
    COMMAND ./test-pulse-dontedit.py && touch run-test-pulse
-   DEPENDS test-pulse-dontedit.py tests_symlinks simpulse_pybind11 libsimpulse ../simpulse/__init__.py ../python/utils.py
+   DEPENDS test-pulse-dontedit.py tests_symlinks simpulse_pybind11 simpulse ../simpulse/__init__.py ../python/utils.py
 )

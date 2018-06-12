@@ -38,7 +38,7 @@ find_package(PYBIND11_WRAPPER)
 
 if (FFTW3_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_FFTW3")
-  set(LIBSIMPULSE_LIBS ${LIBSIMPULSE_LIBS} ${FFTW3_LIBRARY})
+  set(SIMPULSE_LIBS ${SIMPULSE_LIBS} ${FFTW3_LIBRARY})
   include_directories(${FFTW3_INCLUDE_DIR})
 else()
    message("-- Fatal: fftw3 is required")
@@ -110,16 +110,21 @@ add_subdirectory(tests)
 
 
 # Symlink python modules into toplevel directory.
+#
+# Note that we symlink 'python/simpulse' in add_custom_target(), but symlink simpulse_pybind11.so in add_custom_command().
+# It would be better to use add_custom_command() for both, but due to artificial cmake constraints, we can't have an output
+# named 'simpulse' and a library named 'libsimpulse.so' in the same project.
+#
+# FIXME: this has the disadvantage that the 'python/simpulse' symlink doesn't get cleaned up by 'make clean'.  Can this be fixed?
+#
 # Note: when cutting-and-pasting this boilerplate into other CMakeLists.txt files,
 # don't forget to change 'toplevel_symlinks' to 'SUBDIR_symlinks'.
 
-add_custom_target(toplevel_symlinks ALL DEPENDS ${simpulse_pybind11_basename} simpulse)
+add_custom_target(toplevel_symlinks ALL DEPENDS ${simpulse_pybind11_basename}
+                  COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py python/simpulse simpulse)
 
 add_custom_command(OUTPUT ${simpulse_pybind11_basename}
                    COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py $<TARGET_FILE:simpulse_pybind11> ${simpulse_pybind11_basename})
-
-add_custom_command(OUTPUT simpulse
-                   COMMAND ln -s python/simpulse simpulse)
 
 
 ####################################################################################################
@@ -131,7 +136,7 @@ message("   CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message("   INCLUDE_PATH: ${CMAKE_INCLUDE_PATH}")
 message("   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
 message("   PYTHON_MODULE_INSTALL_DIR: ${PYTHON_MODULE_INSTALL_DIR}")
-message("   LIBS: ${LIBSIMPULSE_LIBS}")
+message("   LIBS: ${SIMPULSE_LIBS}")
 message("")
 
 

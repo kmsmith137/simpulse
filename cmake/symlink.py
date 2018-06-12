@@ -8,6 +8,7 @@
 
 import os
 import sys
+import errno
 
 if len(sys.argv) != 3:
     print >>sys.stderr, 'usage: symlink.py <src_abspath> <dst_basename>'
@@ -23,4 +24,22 @@ if dst_basename != os.path.basename(src_abspath):
     print >>sys.stderr, '!!! (email KMS to debug, this is probably a pybind11 configuration issue) !!!\n'
     sys.exit(1)
 
-os.symlink(src_relpath, dst_basename)
+
+# Try to create symlink.  If this fails, one possible reason is that the symlink has already 
+# been created.  In this case, we don't return an error (symlink text must match exactly).
+
+try:
+    os.symlink(src_relpath, dst_basename)
+except OSError, exc:
+    if exc.errno != errno.EEXIST:
+        raise
+    if not os.path.islink(dst_basename):
+        raise
+
+link_text = os.readlink(dst_basename)
+
+if link_text != src_relpath:
+    print >>sys.stderr, "symlink '%s' already exists, but points to '%s' (expected '%s')" % (dst_basename, link_text, src_relpath)
+    sys.exit(1)
+
+
