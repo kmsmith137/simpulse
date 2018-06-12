@@ -47,5 +47,5 @@ add_custom_command(
 add_custom_command(
    OUTPUT run-test-pulse
    COMMAND ./test-pulse-dontedit.py && touch run-test-pulse
-   DEPENDS test-pulse-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/plot.py
+   DEPENDS test-pulse-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/utils.py
 )
