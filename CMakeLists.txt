@@ -106,8 +106,7 @@ add_subdirectory(cpp)
 add_subdirectory(include)
 add_subdirectory(pybind11)
 add_subdirectory(python)
-# add_subdirectory(tests)
-# add_subdirectory(sphinx)
+add_subdirectory(tests)
 
 
 # Symlink python modules into toplevel directory.
