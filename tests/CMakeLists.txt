@@ -26,7 +26,7 @@ add_custom_target(
 
 
 add_custom_target(tests_symlinks ALL DEPENDS ${simpulse_pybind11_basename}
-                  COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py python/simpulse simpulse)
+                  COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py ../python/simpulse simpulse)
 
 add_custom_command(OUTPUT ${simpulse_pybind11_basename}
                    COMMAND ${PROJECT_SOURCE_DIR}/cmake/symlink.py $<TARGET_FILE:simpulse_pybind11> ${simpulse_pybind11_basename})
@@ -42,8 +42,10 @@ add_custom_command(
 )
 
 # FIXME when more unit tests are added, how to avoid repeating dependencies?
+# FIXME is there a way to avoid listing all the python files here??  (Just putting 'copy_python_files' as a dependency isn't enough)
+
 add_custom_command(
    OUTPUT run-test-pulse
    COMMAND ./test-pulse-dontedit.py && touch run-test-pulse
-   DEPENDS test-pulse-dontedit.py tests_symlinks simpulse_pybind11 simpulse ../simpulse/__init__.py ../python/utils.py
+   DEPENDS test-pulse-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/plot.py
 )

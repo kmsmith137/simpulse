@@ -3,6 +3,7 @@
 #include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"   // sp_assert()
 
+#include <iostream>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
