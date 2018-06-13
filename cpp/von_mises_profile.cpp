@@ -305,7 +305,7 @@ double von_mises_profile::eval_integrated_sample_slow(double phi0, double phi1) 
 }
 
 
-double von_mises_profile::point_eval(double phi) const
+double von_mises_profile::eval_instantaneous(double phi) const
 {
     double offset = detrend ? (_mf_multiplier * _peak_flux) : 0.0;
     return _peak_flux * _vm_profile(kappa, phi) - offset;

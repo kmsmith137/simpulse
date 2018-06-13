@@ -99,7 +99,7 @@ public:
 
     // Returns the instantaneous flux evaluated at pulse phase 'phi'.
     // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended.
-    double point_eval(double phi) const;    
+    double eval_instantaneous(double phi) const;    
 
     
     // Returns the Fourier transform of the profile

@@ -120,8 +120,8 @@ void wrap_von_mises_profile(py::module &m)
 	     "This method is intended for debugging (hence the \"_slow\"!)\n"
 	     "Returns the average flux over phase (not time) interval [phi0, phi1].")
 
-	.def("point_eval", &von_mises_profile::point_eval, "phi"_a,
-	     "point_eval(phi) -> float\n"
+	.def("eval_instantaneous", &von_mises_profile::eval_instantaneous, "phi"_a,
+	     "eval_instantaneous(phi) -> float\n"
 	     "\n"
 	     "Returns the instantaneous flux evaluated at pulse phase 'phi'.\n"
 	     "Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended.")
