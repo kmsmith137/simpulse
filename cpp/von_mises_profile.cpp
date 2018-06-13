@@ -32,23 +32,40 @@ inline double _linterp(double u, double f0, double f1)
 // Constructor and helper functions.
 
 
+static ssize_t round_up_to_fft_friendly_value(ssize_t n)
+{
+    sp_assert(n >= 2);
+    
+    // Try (2^m) and (2^m 3).
+    ssize_t n1 = 1 << round_up(log2(n-0.1));
+    ssize_t n2 = 3 * (1 << round_up(log2(n-0.1) - log2(3.)));
+    
+    sp_assert(n1 >= n && n1 < 2*n);
+    sp_assert(n2 >= n && n2 < 2*n);
+
+    return min(n1, n2);
+}
+
+
 static int choose_internal_nphi(double duty_cycle, int min_internal_nphi=0)
 {
     sp_assert2(duty_cycle > 0.0, "simpulse::von_mises_profile: duty_cycle must be > 0");
     sp_assert2(duty_cycle < 0.5, "simpulse::von_mises_profile: duty_cycle must be < 0.5");
 
-    // No fundamental reason for these restrictions, but violating them is probably unintentional!
-    // Note that in the limit duty_cyle->0, this implementation is inefficient, and it would be better
-    // to supply an alternate implementation similar to single_pulse.
+    // There is no fundamental reason for these restrictions, but violating them is probably unintentional
+    // and a symptom of a bug!  Note that in the limit duty_cyle->0, our implementation of the periodic pulse
+    // is inefficient, so if simulating lower duty cycles is of interest, it might be best to revisit the code.
 
     sp_assert2(duty_cycle >= 1.0e-4, "simpulse::von_mises_profile: we currently don't support duty cycles < 1.0e-4");
     sp_assert2(min_internal_nphi >= 0, "simpulse::von_mises_profile: 'min_internal_nphi' argument must be >= 0");
     sp_assert2(min_internal_nphi <= 65536, "simpulse::von_mises_profile: we currently don't support nphi >= 65536");
 
     // This value suffices to simulate the pulsar to ~1% accuracy or better.
-    int default_nphi = round_up(30./duty_cycle);
+    int nphi = round_up(30./duty_cycle);
 
-    return max(default_nphi, min_internal_nphi);
+    nphi = round_up_to_fft_friendly_value(nphi);
+    nphi = max(nphi, min_internal_nphi);
+    return nphi;
 }
 
 
