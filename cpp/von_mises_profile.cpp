@@ -322,7 +322,7 @@ double von_mises_profile::eval_instantaneous(double phi) const
 
 double von_mises_profile::_get_rho2(double dphi) const
 {
-    double ret = profile_fft[0];  // can be zero, if detrend=true
+    double ret = square(profile_fft[0]);  // can be zero, if detrend=true
 
     for (int m = 1; m < internal_nphi2; m++) {
 	double rho_m = profile_fft[m] * bessj0(M_PI * m * dphi);

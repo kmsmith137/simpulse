@@ -212,12 +212,16 @@ def test_snr_calculations():
 
         snr = vm.get_single_pulse_signal_to_noise(dt_sample, pulse_freq, sample_rms)
 
+        # Test consistency of single_pulse_snr, multi_pulse_snr
         npulses = np.random.uniform(100., 1000.)   # doesn't need to be an integer
         msnr = vm.get_multi_pulse_signal_to_noise(npulses*dt_pulse, dt_sample, pulse_freq, sample_rms)
-        assert abs(msnr - snr*npulses**0.5) < 1.0e-10  # consistency of single_pulse_snr, multi_pulse_snr
+        assert abs(msnr - snr*npulses**0.5) < 1.0e-10
+
+        # Test agreement between C++ SNR calculation, and python reference calculation
+        # FIXME: usually agrees to sub-percent accuracy, but disagreement can be as large as 3%, why?!
 
         snr_ref = 0.0
-        subsampling_factor = 20
+        subsampling_factor = 100
         pm = simpulse.constant_acceleration_phase_model(phi0=0, f0=pulse_freq, fdot=0, t0=0)
         
         for s in xrange(subsampling_factor):
@@ -225,7 +229,8 @@ def test_snr_calculations():
             rho = vm.eval_integrated_samples(dt, dt + dt_pulse, nsamples_per_pulse, pm)
             snr_ref += np.sum(rho**2)**0.5 / sample_rms / subsampling_factor
 
-        print 'XXX', abs((snr - snr_ref) / snr_ref), snr, snr_ref
+        epsilon = abs((snr - snr_ref) / snr_ref)
+        assert epsilon < 0.03   # see FIXME above
 
     print 'test_snr_calculations: done'
 
