@@ -238,6 +238,36 @@ def test_eval_integrated_samples():
 ####################################################################################################
 
 
+def test_profile_fft():
+    print 'test_profile_fft: start'
+
+    for iter in xrange(100):
+        vm = make_random_von_mises_profile()
+        nphi = vm.internal_nphi
+        nphi2 = nphi//2 + 1
+        nreq = np.random.randint(nphi2//2, 2*nphi2)
+
+        # Get profile FFT by calling C++ code
+        rhofft = vm.get_profile_fft(nreq)
+        
+        # Now calculate FFT using reference python code.
+        # Note that we use the same number of phi samples, so the two calculations should agree to machine precision.
+        
+        phivec = np.arange(nphi) / float(nphi)
+        rhovec = _vm_profile(vm.peak_flux, vm.kappa, phivec) - (vm.mean_flux if vm.detrend else 0.0)
+
+        m = min(nreq, nphi2)
+        rhofft_ref = np.zeros(nreq)
+        rhofft_ref[:m] = np.fft.fft(rhovec)[:m].real / nphi
+
+        assert np.max(np.abs(rhofft - rhofft_ref)) < 1.0e-10
+
+    print 'test_profile_fft: done'
+
+
+####################################################################################################
+
+
 def test_snr_calculations():
     print 'test_snr_calculations: start'
 
@@ -278,7 +308,9 @@ def test_snr_calculations():
 ####################################################################################################
 
 
-test_constant_acceleration_phase_model()
-test_von_mises_profile_basics()
-test_eval_integrated_samples()
-test_snr_calculations()
+if __name__ == '__main__':
+    test_constant_acceleration_phase_model()
+    test_von_mises_profile_basics()
+    test_eval_integrated_samples()
+    test_profile_fft()
+    test_snr_calculations()
