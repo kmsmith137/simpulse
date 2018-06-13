@@ -23,7 +23,7 @@ def make_random_von_mises_profile():
     duty_cycle = np.random.uniform(0.01, 0.2)
     detrend = bool(np.random.randint(0,2))
     peak_flux = np.random.uniform(1.0, 10.0)
-    min_internal_nphi = 4096    # use default
+    min_internal_nphi = 0    # use default
 
     # Use artifically small value, to test blocking logic corner cases
     internal_phi_block_size = np.random.randint(1, 17)
