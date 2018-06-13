@@ -6,7 +6,7 @@ link_directories(${CMAKE_SOURCE_DIR}/pybind11)
 
 add_custom_target(
    check DEPENDS 
-   run-test-pulse
+   run-test-pulsars
 )
 
 
@@ -36,9 +36,9 @@ add_custom_command(OUTPUT ${simpulse_pybind11_basename}
 
 
 add_custom_command(
-    OUTPUT test-pulse-dontedit.py
-    COMMAND cp -f ${PROJECT_SOURCE_DIR}/tests/test-pulse.py test-pulse-dontedit.py
-    DEPENDS test-pulse.py
+    OUTPUT test-pulsars-dontedit.py
+    COMMAND cp -f ${PROJECT_SOURCE_DIR}/tests/test-pulsars.py test-pulsars-dontedit.py
+    DEPENDS test-pulsars.py
 )
 
 # FIXME when more unit tests are added, how to avoid repeating dependencies?
@@ -48,7 +48,7 @@ add_custom_command(
 # directory have higher priority than libraries installed with 'make install'.  Is there a better way??!
 
 add_custom_command(
-   OUTPUT run-test-pulse
-   COMMAND env DYLD_LIBRARY_PATH=../cpp:$$DYLD_LIBRARY_PATH ./test-pulse-dontedit.py && touch run-test-pulse
-   DEPENDS test-pulse-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/utils.py
+   OUTPUT run-test-pulsars
+   COMMAND env DYLD_LIBRARY_PATH=../cpp:$$DYLD_LIBRARY_PATH ./test-pulsars-dontedit.py && touch run-test-pulsars
+   DEPENDS test-pulsars-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/utils.py
 )
