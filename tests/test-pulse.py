@@ -176,21 +176,61 @@ def test_von_mises_profile_basics():
 ####################################################################################################
 
 
+def eval_integrated_samples_slow(vm, t0, t1, nt, pm):
+    ret = np.zeros(nt)
+    tvec = np.linspace(t0, t1, nt+1)
+
+    for it in range(nt):
+        (phi0, phi1) = (pm.eval_phi(tvec[it]), pm.eval_phi(tvec[it+1]))
+        ret[it] = vm.eval_integrated_sample_slow(phi0, phi1)
+
+    return ret
+
+
+def eval_integrated_samples_reference(vm, t0, t1, nt, pm):
+    kappa = vm.kappa
+    pf = vm.peak_flux
+    df = vm.mean_flux if vm.detrend else 0    # detrending flux offset
+
+    ret = np.zeros(nt)
+    tvec = np.linspace(t0, t1, nt+1)
+
+    for it in range(nt):
+        (phi0, phi1) = (pm.eval_phi(tvec[it]), pm.eval_phi(tvec[it+1]))
+        assert phi0 < phi1
+
+        # subsampling factor
+        ns = int(20. * (phi1-phi0) / vm.duty_cycle) + 2
+
+        # midpoint rule
+        pvec = np.linspace(phi0, phi1, 2*ns+1)[1::2]
+        rvec = _vm_profile(pf, kappa, pvec) - df
+        ret[it] = np.sum(rvec) / ns
+
+    return ret
+
+
 def test_eval_integrated_samples():
     print 'test_eval_integrated_samples: start'
+    niter = 1000
 
-    for iter in xrange(100):
+    for iter in xrange(niter):
+        if (iter > 1) and (iter % 100 == 0):
+            print 'test_eval_integrated_samples: iteration %d/%d' % (iter, niter)
+
         pm = make_random_constant_acceleration_phase_model()
         vm = make_random_von_mises_profile()
         t0, t1, nt = make_random_time_sampling()
     
-        tvec = np.linspace(t0, t1, nt+1)
-        rhovec = vm.eval_integrated_samples(t0, t1, nt, pm)
+        rho = vm.eval_integrated_samples(t0, t1, nt, pm)
+        rho_slow = eval_integrated_samples_slow(vm, t0, t1, nt, pm)
+        rho_ref = eval_integrated_samples_reference(vm, t0, t1, nt, pm)
 
-        for it in range(nt):
-            (phi0, phi1) = (pm.eval_phi(tvec[it]), pm.eval_phi(tvec[it+1]))
-            rho = vm.eval_integrated_sample_slow(phi0, phi1)
-            assert abs(rhovec[it] - rho) < 1.0e-7
+        # Consistency between eval_integrated_samples() and eval_integrated_samples_slow()
+        assert np.max(np.abs(rho-rho_slow)) < 1.0e-7
+
+        # Consistency between C++ eval_integrated_samples() and python eval_integrated_samples_reference()
+        assert np.max(np.abs(rho-rho_ref)) < 0.015
 
     print 'test_eval_integrated_samples: done'
 
