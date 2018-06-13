@@ -169,30 +169,26 @@ def test_von_mises_profile_basics():
     print 'test_von_mises_profile_basics: done'
 
 
-
 ####################################################################################################
 
 
-def test_eval_integrated_samples_instance(pm, vm, t0, t1, nt):
-    a = vm.eval_integrated_samples(t0, t1, nt, pm)
-    t = np.linspace(t0, t1, nt+1)
-
-    for it in range(nt):
-        (phi0, phi1) = (pm.eval_phi(t[it]), pm.eval_phi(t[it+1]))
-        x = vm.eval_integrated_sample_slow(phi0, phi1)
-        assert abs(a[it] - x) < 1.0e-7
-
-
 def test_eval_integrated_samples():
-    pm = make_random_constant_acceleration_phase_model()
-    vm = make_random_von_mises_profile()
+    print 'test_eval_integrated_samples: start'
 
-    nt = np.random.randint(10, 100)
-    t0 = np.random.uniform(-10, 10)
-    t1 = np.random.uniform(-10, 10)
-    (t0, t1) = (min(t0,t1), max(t0,t1))
+    for iter in xrange(100):
+        pm = make_random_constant_acceleration_phase_model()
+        vm = make_random_von_mises_profile()
+        t0, t1, nt = make_random_time_sampling()
     
-    test_eval_integrated_samples_instance(pm, vm, t0, t1, nt)
+        tvec = np.linspace(t0, t1, nt+1)
+        rhovec = vm.eval_integrated_samples(t0, t1, nt, pm)
+
+        for it in range(nt):
+            (phi0, phi1) = (pm.eval_phi(tvec[it]), pm.eval_phi(tvec[it+1]))
+            rho = vm.eval_integrated_sample_slow(phi0, phi1)
+            assert abs(rhovec[it] - rho) < 1.0e-7
+
+    print 'test_eval_integrated_samples: done'
 
 
 ####################################################################################################
@@ -240,10 +236,5 @@ def test_snr_calculations():
 
 test_constant_acceleration_phase_model()
 test_von_mises_profile_basics()
+test_eval_integrated_samples()
 test_snr_calculations()
-
-niter = 1000
-for iter in xrange(niter):
-    if iter % 1000 == 0:
-        print 'iteration %d/%d' % (iter, niter)
-    test_eval_integrated_samples()
