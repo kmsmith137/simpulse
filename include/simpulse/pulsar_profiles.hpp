@@ -52,7 +52,8 @@ public:
     //
     // It is unlikely that you'll need to set the 'min_internal_nphi' constructor argument, which
     // changes the number of phase bins used internally to represent the pulse.  If set to zero, then
-    // a reasonable default value will be chosen.
+    // a reasonable default value will be chosen.  (The default suffices to simulate the pulsar to ~1%
+    // accuracy or better.)
     //
     // It is unlikely that you'll need to set the 'internal_phi_block_size' argument, which determines
     // the block size for calls to phase_model_base::eval_phi_sequence().  If set to zero, then a

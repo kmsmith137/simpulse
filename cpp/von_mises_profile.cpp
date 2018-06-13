@@ -45,8 +45,7 @@ static int choose_internal_nphi(double duty_cycle, int min_internal_nphi=0)
     sp_assert2(min_internal_nphi >= 0, "simpulse::von_mises_profile: 'min_internal_nphi' argument must be >= 0");
     sp_assert2(min_internal_nphi <= 65536, "simpulse::von_mises_profile: we currently don't support nphi >= 65536");
 
-    // Ultra-conservative value
-    // FIXME I'd like to understand better how to choose this
+    // This value suffices to simulate the pulsar to ~1% accuracy or better.
     int default_nphi = round_up(30./duty_cycle);
 
     return max(default_nphi, min_internal_nphi);

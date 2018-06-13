@@ -23,7 +23,7 @@ def make_random_von_mises_profile():
     duty_cycle = np.random.uniform(0.01, 0.2)
     detrend = bool(np.random.randint(0,2))
     peak_flux = np.random.uniform(1.0, 10.0)
-    min_internal_nphi = 0    # use default
+    min_internal_nphi = 4096    # use default
 
     # Use artifically small value, to test blocking logic corner cases
     internal_phi_block_size = np.random.randint(1, 17)
@@ -187,7 +187,7 @@ def eval_integrated_samples_slow(vm, t0, t1, nt, pm):
     return ret
 
 
-def eval_integrated_samples_reference(vm, t0, t1, nt, pm):
+def eval_integrated_samples_reference(vm, t0, t1, nt, pm, subsampling_factor=30):
     kappa = vm.kappa
     pf = vm.peak_flux
     df = vm.mean_flux if vm.detrend else 0    # detrending flux offset
@@ -200,7 +200,7 @@ def eval_integrated_samples_reference(vm, t0, t1, nt, pm):
         assert phi0 < phi1
 
         # subsampling factor
-        ns = int(20. * (phi1-phi0) / vm.duty_cycle) + 2
+        ns = int(subsampling_factor * (phi1-phi0) / vm.duty_cycle) + 2
 
         # midpoint rule
         pvec = np.linspace(phi0, phi1, 2*ns+1)[1::2]
@@ -230,6 +230,13 @@ def test_eval_integrated_samples():
         assert np.max(np.abs(rho-rho_slow)) < 1.0e-7
 
         # Consistency between C++ eval_integrated_samples() and python eval_integrated_samples_reference()
+        #
+        # Note: with default parameters, epsilon can be as large as ~0.009.  (I set a threshold of 0.015
+        # for the unit test.)  However, I checked that if 'von_mises_profile.internal_nphi' and 
+        # 'eval_integrated_samples_reference.subsampling_factor' are increased, then epsilon can 
+        # be made much smaller.
+
+        epsilon = np.max(np.abs(rho-rho_ref))
         assert np.max(np.abs(rho-rho_ref)) < 0.015
 
     print 'test_eval_integrated_samples: done'
