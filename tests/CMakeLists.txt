@@ -43,9 +43,12 @@ add_custom_command(
 
 # FIXME when more unit tests are added, how to avoid repeating dependencies?
 # FIXME is there a way to avoid listing all the python files here??  (Just putting 'copy_python_files' as a dependency isn't enough)
+#
+# FIXME here and below, the "env DYLD_LIBRARY_PATH=..." is an osx hack to ensure that libraries in the build
+# directory have higher priority than libraries installed with 'make install'.  Is there a better way??!
 
 add_custom_command(
    OUTPUT run-test-pulse
-   COMMAND ./test-pulse-dontedit.py && touch run-test-pulse
+   COMMAND env DYLD_LIBRARY_PATH=../cpp:$$DYLD_LIBRARY_PATH ./test-pulse-dontedit.py && touch run-test-pulse
    DEPENDS test-pulse-dontedit.py tests_symlinks copy_python_files simpulse_pybind11 simpulse ../python/simpulse/__init__.py ../python/simpulse/utils.py
 )
