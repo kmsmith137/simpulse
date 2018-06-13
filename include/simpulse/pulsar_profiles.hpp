@@ -73,7 +73,14 @@ public:
     template<typename T> void add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const;
 
 
-    // The routines below are useful for getting or setting the amplitude of the pulsar.
+    // The overall amplitude of the pulses can be specified by either the 'peak_flux' or the 'mean_flux'.
+    // Note: these refer to the peak/mean flux without any detrending offset subtracted! (even if the 'detrend' flag is set)
+
+    double get_peak_flux() const;
+    double get_mean_flux() const;
+    void set_peak_flux(double peak_flux);
+    void set_mean_flux(double mean_flux);
+
     // The "multi-pulse signal-to-noise" is the total SNR for a train of pulses with duration 'total_time'.
     //
     // The SNR calculations account for finite time resolution (and detrending, if detrend=True was specified
@@ -86,13 +93,8 @@ public:
     //   - The 'pulse_freq' argument is the pulse frequency.
     //   - The 'sample_rms' argument is the RMS noise fluctuation in each time sample.
 
-    double get_peak_flux() const;
-    double get_mean_flux() const;
     double get_single_pulse_signal_to_noise(double dt_sample, double pulse_freq, double sample_rms=1.0) const;
     double get_multi_pulse_signal_to_noise(double total_time, double dt_sample, double pulse_freq, double sample_rms=1.0) const;
-
-    void set_peak_flux(double peak_flux);
-    void set_mean_flux(double mean_flux);
     void set_single_pulse_signal_to_noise(double snr, double dt_sample, double pulse_freq, double sample_rms=1.0);
     void set_multi_pulse_signal_to_noise(double snr, double total_time, double dt_sample, double pulse_freq, double sample_rms=1.0);
     

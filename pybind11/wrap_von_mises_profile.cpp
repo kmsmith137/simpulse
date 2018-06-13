@@ -129,12 +129,14 @@ void wrap_von_mises_profile(py::module &m)
 	.def_property("peak_flux", 
 		      &von_mises_profile::get_peak_flux, 
 		      &von_mises_profile::set_peak_flux,
-		      "Peak flux of the pulse (settable property).")
+		      "Peak flux of the pulse (settable property).\n\n"
+		      "Note: we define the peak flux with no detrending correction applied (even if the 'detrend' flag is True)")
 
 	.def_property("mean_flux", 
 		      &von_mises_profile::get_mean_flux, 
 		      &von_mises_profile::set_mean_flux,
-		      "Mean flux of the pulse (settable property).")
+		      "Mean flux of the pulse (settable property).\n\n"
+		      "Note: we define the mean flux with no detrending correction applied (even if the 'detrend' flag is True)")
 
 	.def("get_single_pulse_signal_to_noise", 
 	     &von_mises_profile::get_single_pulse_signal_to_noise,
