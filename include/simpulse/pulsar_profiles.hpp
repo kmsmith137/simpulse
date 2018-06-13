@@ -59,7 +59,7 @@ public:
     const double duty_cycle;
     const bool detrend;
     const int internal_nphi;
-
+    const double kappa;      // von Mises profile is exp(-2 kappa sin(pi*phi)^2)
 
     // These are the main routines used to simulate a pulsar in a regularly spaced sequence of time samples.
     // The 'out' argument should point to an array of length nt.
@@ -121,7 +121,6 @@ public:
 
 protected:
     const int internal_nphi2;
-    const double kappa;
 
     double _peak_flux = 1.0;      // used internally to represent the amplitude
     double _mf_multiplier = 0.0;  // ratio (mean_flux / peak_flux), constant after construction

@@ -57,8 +57,8 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
     : duty_cycle(duty_cycle_),
       detrend(detrend_),
       internal_nphi(choose_internal_nphi(duty_cycle_, min_internal_nphi)),   // note: constructor args sanity-checked here
-      internal_nphi2(internal_nphi/2 + 1),
       kappa(log(2.0) / (2 * square(sin(M_PI*duty_cycle/2.)))),
+      internal_nphi2(internal_nphi/2 + 1),
       _peak_flux(1.0),
       _mf_multiplier(0.0)   // to be initialized below
 {

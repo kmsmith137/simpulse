@@ -95,6 +95,9 @@ void wrap_von_mises_profile(py::module &m)
 	.def_readonly("internal_nphi", &von_mises_profile::internal_nphi,
 		      "Number of phase bins used internally to represent the pulse.")
 
+	.def_readonly("kappa", &von_mises_profile::kappa,
+		      "Parameter appearing in von Mises profile: rho(phi) = exp(-2 kappa sin(pi*phi)^2)")
+
 	.def("eval_integrated_samples", eval_integrated_samples, "t0"_a, "t1"_a, "nt"_a, "phase_model"_a,
 	     "eval_integrated_samples(t0, t1, nt, phase_model) -> (1D array)\n"
 	     "\n"
