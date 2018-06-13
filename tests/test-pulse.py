@@ -5,11 +5,8 @@ import simpulse
 import numpy as np
 
 
-def make_random_phase_model():
-    """
-    Returns object of type simpulse.constant_acceleration_phase_model.
-    Guaranteed to be valid over the range -10 < t < 10.
-    """
+def make_random_constant_acceleration_phase_model():
+    """Guaranteed to be valid over the range -10 < t < 10."""
 
     phi0 = np.random.uniform(0, 100)
     f0 = np.random.uniform(1.0, 10.)
@@ -22,9 +19,7 @@ def make_random_phase_model():
     return ret
 
 
-def make_random_profile():
-    """Returns object of type simpulse.von_mises_profile."""
-
+def make_random_von_mises_profile():
     duty_cycle = np.random.uniform(0.01, 0.2)
     detrend = bool(np.random.randint(0,2))
     peak_flux = np.random.uniform(1.0, 10.0)
@@ -45,7 +40,10 @@ def make_random_time_sampling():
     nt = int(np.exp(np.random.uniform(np.log(2), np.log(1000))))
 
     return (t0, t1, nt)
-    
+
+
+def _vm_profile(peak_flux, kappa, phi):
+    return peak_flux * np.exp(-2 * kappa * np.sin(np.pi*phi)**2)
 
 
 ####################################################################################################
@@ -55,7 +53,7 @@ def test_constant_acceleration_phase_model():
     print 'test_constant_acceleration_phase_model: start'
 
     for iter in xrange(100):
-        pm = make_random_phase_model()
+        pm = make_random_constant_acceleration_phase_model()
         t0, t1, nt = make_random_time_sampling()
         tvec = np.linspace(t0, t1, nt)
 
@@ -77,6 +75,103 @@ def test_constant_acceleration_phase_model():
     print 'test_constant_acceleration_phase_model: done'
 
 
+####################################################################################################
+
+
+class normalization_sanity_checker:
+    """
+    This helper class is used in test_von_mises_profile_basics(), to check that the different normalization-type 
+    parameters (peak_flux, mean_flux, single_pulse_snr, multi_pulse_snr) all change consistently when one of them
+    is changed.
+    """
+
+    def __init__(self, vm):
+        """The constructor is called before the normalization is changed."""
+
+        # For SNR calculations
+        self.pulse_freq = np.random.uniform(10., 100.)
+        self.dt_sample = np.random.uniform(0.2, 2.0) * vm.duty_cycle / self.pulse_freq
+        self.total_time = np.random.uniform(100., 1000.) / self.pulse_freq
+        self.sample_rms = np.random.uniform(0.1, 10.0)
+
+        self.pf0 = vm.peak_flux
+        self.mf0 = vm.mean_flux
+        self.ssnr0 = vm.get_single_pulse_signal_to_noise(self.dt_sample, self.pulse_freq, self.sample_rms)
+        self.msnr0 = vm.get_multi_pulse_signal_to_noise(self.total_time, self.dt_sample, self.pulse_freq, self.sample_rms)
+
+    def recheck(self, vm):
+        """recheck() is called whenever the normalization is changed."""
+
+        r = vm.peak_flux / self.pf0
+        mf = vm.mean_flux
+        ssnr = vm.get_single_pulse_signal_to_noise(self.dt_sample, self.pulse_freq, self.sample_rms)
+        msnr = vm.get_multi_pulse_signal_to_noise(self.total_time, self.dt_sample, self.pulse_freq, self.sample_rms)
+
+        # Check that ratios between normalization-type parameters are the same as the originals.
+        assert(abs(mf/(r*self.mf0) - 1) < 1.0e-10)
+        assert(abs(ssnr/(r*self.ssnr0) - 1) < 1.0e-10)
+        assert(abs(msnr/(r*self.msnr0) - 1) < 1.0e-10)
+
+
+def test_von_mises_profile_basics():
+    print 'test_von_mises_profile_basics: start'
+
+    for iter in xrange(100):
+        vm = make_random_von_mises_profile()
+        df = vm.mean_flux if vm.detrend else 0    # detrending flux offset
+        pf = vm.peak_flux
+        D = vm.duty_cycle
+        k = vm.kappa
+
+        # Consistency of duty_cycle, kappa
+        assert np.abs(_vm_profile(pf,k,D/2) - (pf/2)) < 1.0e-13   # consistency of duty_cycle, kappa
+
+        # Consistency of C++ and python reference evaluation
+        phi = np.random.uniform(-10., 10., size=100)
+        rho1 = np.array([ vm.eval_instantaneous(p) for p in phi ])  # C++ profile evaluation
+        rho2 = _vm_profile(pf, k, phi) - df                         # python reference profile evaluation
+        assert np.max(np.abs(rho1-rho2)) < 1.0e-10
+
+        # Compare mean_flux to python reference evaluation
+        nphi = int(5./D)   # suffices for convergence to surprisingly high precision
+        phi = np.arange(nphi) / float(nphi)
+        mf_ref = np.mean(_vm_profile(pf, k, phi))
+        assert abs(vm.mean_flux - mf_ref) < 1.0e-10
+
+        # Some basic sanity checking of the "normalization setters": set_peak_flux(),
+        # set_mean_flux(), set_single_pulse_signal_to_noise(), set_multi_pulse_signal_to_noise().
+        #
+        # This does not check that the SNR calculations are actually correct.  (This is done
+        # in a separate unit test.)
+
+        s = normalization_sanity_checker(vm)
+
+        pf_new = np.random.uniform(1.0, 10.0)
+        vm.peak_flux = pf_new
+        assert abs(vm.peak_flux - pf_new) < 1.0e-10
+        s.recheck(vm)
+
+        mf_new = np.random.uniform(1.0, 10.0)
+        vm.mean_flux = mf_new
+        assert abs(vm.mean_flux - mf_new) < 1.0e-10
+        s.recheck(vm)
+
+        ssnr_new = np.random.uniform(1.0, 10.0)
+        vm.set_single_pulse_signal_to_noise(ssnr_new, s.dt_sample, s.pulse_freq, s.sample_rms)
+        assert abs(vm.get_single_pulse_signal_to_noise(s.dt_sample, s.pulse_freq, s.sample_rms) - ssnr_new) < 1.0e-10
+        s.recheck(vm)
+
+        msnr_new = np.random.uniform(1.0, 10.0)
+        vm.set_multi_pulse_signal_to_noise(msnr_new, s.total_time, s.dt_sample, s.pulse_freq, s.sample_rms)
+        assert abs(vm.get_multi_pulse_signal_to_noise(s.total_time, s.dt_sample, s.pulse_freq, s.sample_rms) - msnr_new) < 1.0e-10
+        s.recheck(vm)
+
+    print 'test_von_mises_profile_basics: done'
+
+
+####################################################################################################
+
+
 def test_eval_integrated_samples_instance(pm, vm, t0, t1, nt):
     a = vm.eval_integrated_samples(t0, t1, nt, pm)
     t = np.linspace(t0, t1, nt+1)
@@ -88,8 +183,8 @@ def test_eval_integrated_samples_instance(pm, vm, t0, t1, nt):
 
 
 def test_eval_integrated_samples():
-    pm = make_random_phase_model()
-    vm = make_random_profile()
+    pm = make_random_constant_acceleration_phase_model()
+    vm = make_random_von_mises_profile()
 
     nt = np.random.randint(10, 100)
     t0 = np.random.uniform(-10, 10)
@@ -100,6 +195,7 @@ def test_eval_integrated_samples():
 
 
 test_constant_acceleration_phase_model()
+test_von_mises_profile_basics()
 
 niter = 1000
 for iter in xrange(niter):
