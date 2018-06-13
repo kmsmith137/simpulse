@@ -53,12 +53,17 @@ public:
     // It is unlikely that you'll need to set the 'min_internal_nphi' constructor argument, which
     // changes the number of phase bins used internally to represent the pulse.  If set to zero, then
     // a reasonable default value will be chosen.
+    //
+    // It is unlikely that you'll need to set the 'internal_phi_block_size' argument, which determines
+    // the block size for calls to phase_model_base::eval_phi_sequence().  If set to zero, then a
+    // reasonable default value will be chosen.
 
-    von_mises_profile(double duty_cycle, bool detrend, int min_internal_nphi=0);
+    von_mises_profile(double duty_cycle, bool detrend, int min_internal_nphi=0, int internal_phi_block_size=0);
 
     const double duty_cycle;
     const bool detrend;
     const int internal_nphi;
+    const int internal_phi_block_size;
     const double kappa;      // von Mises profile is exp(-2 kappa sin(pi*phi)^2)
 
     // These are the main routines used to simulate a pulsar in a regularly spaced sequence of time samples.
@@ -134,8 +139,7 @@ protected:
     // Length internal_nphi2, normalized to profile_fft[0]=1.
     std::vector<double> profile_fft;
 
-    mutable std::vector<double> phi_tmp;   // length (tmp_block_size + 1)
-    const ssize_t phi_block_size = 1024;
+    mutable std::vector<double> phi_tmp;   // length (internal_phi_block_size + 1)
 
     double _get_rho2(double dphi) const;
 };

@@ -53,10 +53,23 @@ static int choose_internal_nphi(double duty_cycle, int min_internal_nphi=0)
 }
 
 
-von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_internal_nphi)
+static int choose_internal_phi_block_size(int requested_block_size)
+{
+    if (requested_block_size == 0)
+	return 256;  // default value
+
+    sp_assert2(requested_block_size > 0, "simpulse::von_mises_profile: internal_phi_block_size must be >= 0");
+    sp_assert2(requested_block_size <= 4096, "simpulse::von_mises_profile: internal_phi_block_size must be <= 4096");
+
+    return requested_block_size;
+}    
+
+
+von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_internal_nphi, int internal_phi_block_size_)
     : duty_cycle(duty_cycle_),
       detrend(detrend_),
-      internal_nphi(choose_internal_nphi(duty_cycle_, min_internal_nphi)),   // note: constructor args sanity-checked here
+      internal_nphi(choose_internal_nphi(duty_cycle_, min_internal_nphi)),   // 'duty_cycle', 'min_internal_nphi' sanity-checked here
+      internal_phi_block_size(choose_internal_phi_block_size(internal_phi_block_size_)),
       kappa(log(2.0) / (2 * square(sin(M_PI*duty_cycle/2.)))),
       internal_nphi2(internal_nphi/2 + 1),
       _peak_flux(1.0),
@@ -239,7 +252,7 @@ void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ss
     sp_assert2(out, "simpulse::von_mises_profile::eval_integrated_samples(): 'out' is a null pointer");
 
     if (!phi_tmp.size())
-	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
+	phi_tmp.resize(internal_phi_block_size+1, 0.0);   // note "+1" here
 
     _array_overwriter<T> hout(out);
 
@@ -247,7 +260,7 @@ void von_mises_profile::eval_integrated_samples(T *out, double t0, double t1, ss
 		       detrend ? 0.0 : (_mf_multiplier * _peak_flux),
 		       internal_nphi, &detrended_profile[0], 
 		       &detrended_profile_antider[0], 
-		       phi_block_size, &phi_tmp[0]);
+		       internal_phi_block_size, &phi_tmp[0]);
 }
 
 
@@ -259,7 +272,7 @@ void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssi
     sp_assert2(out, "simpulse::von_mises_profile::add_integrated_samples(): 'out' is a null pointer");
 
     if (!phi_tmp.size())
-	phi_tmp.resize(phi_block_size+1, 0.0);   // note "+1" here
+	phi_tmp.resize(internal_phi_block_size+1, 0.0);   // note "+1" here
 
     _array_accumulator<T> hout(out);
 
@@ -267,7 +280,7 @@ void von_mises_profile::add_integrated_samples(T *out, double t0, double t1, ssi
 		       detrend ? 0.0 : (_mf_multiplier * _peak_flux),
 		       internal_nphi, &detrended_profile[0], 
 		       &detrended_profile_antider[0], 
-		       phi_block_size, &phi_tmp[0]);
+		       internal_phi_block_size, &phi_tmp[0]);
 }
 
 

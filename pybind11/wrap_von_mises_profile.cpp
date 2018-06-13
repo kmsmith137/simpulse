@@ -30,7 +30,8 @@ void wrap_von_mises_profile(py::module &m)
 	"\n"
 	"Constructor syntax::\n"
 	"\n"
-	"    p = simpulse.von_mises_profile(duty_cycle, detrend, min_internal_nphi=0)\n"
+	"    p = simpulse.von_mises_profile(duty_cycle, detrend, min_internal_nphi=0,\n"
+	"                                   internal_phi_block_size=0)\n"
 	"\n"
 	"where:\n"
 	"\n"
@@ -42,6 +43,10 @@ void wrap_von_mises_profile(py::module &m)
 	"   - It is unlikely that you'll need to set the 'min_internal_nphi' constructor argument, which\n"
 	"     changes the number of phase bins used internally to represent the pulse.  If set to zero, then\n"
 	"     a reasonable default value will be chosen.\n"
+	"\n"
+	"   - It is unlikely that you'll need to set the 'internal_phi_block_size' argument, which determines\n"
+	"     the block size for calls to phase_model_base.eval_phi_sequence().  If set to zero, then a\n"
+	"     reasonable default value will be chosen.\n"
 	"\n"
 	"In order to simulate a pulsar, you need two things: a phase model and a pulse profile.  Then, to do\n"
 	"the simulation, you can call either profile.eval_integrated_samples() or profile.add_integrated_samples().\n"
@@ -84,7 +89,7 @@ void wrap_von_mises_profile(py::module &m)
 
 
     py::class_<von_mises_profile>(m, "von_mises_profile", doc)
-	.def(py::init<double,bool,int>(), "duty_cycle"_a, "detrend"_a, "min_internal_nphi"_a = 0)
+	.def(py::init<double,bool,int,int>(), "duty_cycle"_a, "detrend"_a, "min_internal_nphi"_a = 0, "internal_phi_block_size"_a = 0)
 
 	.def_readonly("duty_cycle", &von_mises_profile::duty_cycle, 
 		      "Duty cycle of the pulsar, defined as D = (pulse FWHM) / (pulse period).")
@@ -94,6 +99,9 @@ void wrap_von_mises_profile(py::module &m)
 
 	.def_readonly("internal_nphi", &von_mises_profile::internal_nphi,
 		      "Number of phase bins used internally to represent the pulse.")
+
+	.def_readonly("internal_phi_block_size", &von_mises_profile::internal_phi_block_size,
+		      "Block size used internally, in calls to phase_model_base.eval_phi_sequqnece().")
 
 	.def_readonly("kappa", &von_mises_profile::kappa,
 		      "Parameter appearing in von Mises profile: rho(phi) = exp(-2 kappa sin(pi*phi)^2)")
