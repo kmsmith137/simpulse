@@ -87,7 +87,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 	_mf_multiplier += rho[iphi] / internal_nphi;
     }
 
-    // Compute 'profile_fft'.
+    // Compute 'profile_fft'.  (Don't forget detrending correction!)
 
     vector<complex<double>> ctmp(internal_nphi2, 0.0);
 
@@ -413,7 +413,7 @@ void von_mises_profile::get_profile_fft(T *out, int nout) const
     int m = min(nout, internal_nphi2);
 
     for (int i = 0; i < m; i++)
-	out[i] = T(profile_fft[i]);
+	out[i] = T(_peak_flux * profile_fft[i]);
 
     for (int i = m; i < nout; i++)
 	out[i] = T(0);
