@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(simpulse)
-set(CMAKE_MACOSX_RPATH 0)   # needed to avoid warning from 'cmake'
+set(CMAKE_MACOSX_RPATH 1)   # needed to avoid warning from 'cmake'
 
 message("")
 message("Reminder: here are some influential variables, and their values (to change, do 'cmake -DVAR=VALUE ...' or 'export VAR=VALUE')")
