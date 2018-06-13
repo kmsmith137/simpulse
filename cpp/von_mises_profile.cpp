@@ -329,7 +329,7 @@ double von_mises_profile::_get_rho2(double dphi) const
 	ret += 2 * square(rho_m);
     }
 
-    return ret;
+    return square(_peak_flux) * ret;
 }
 
 
