@@ -208,7 +208,10 @@ void wrap_von_mises_profile(py::module &m)
 	     "\n"
 	     "The return value is a 1D array of length 'nout'.  If nout=0 (the default), then it defaults to\n"
 	     "(internal_nphi/2+1), the number of Fourier coefficients which are computed internally.  (If 'nout'\n"
-	     "is larger than this, then the returned array is zero-padded.")
+	     "is larger than this, then the returned array is zero-padded.\n"
+	     "\n"
+	     "The returned FFT does not include a time-sample window function.  You may want to multiply the\n"
+	     "output by j_0(pi*dphi/2), where dphi = (pulse_freq * dt_sample).")
     ;
 }
 

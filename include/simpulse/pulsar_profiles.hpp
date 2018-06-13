@@ -73,6 +73,8 @@ public:
     // of the last time sample.  Thus, t1=t0+nt*dt, where dt is the length of a sample (not t1=t0+(nt-1)*dt).
     //
     // Reminder: if the 'detrend' flag was specified at construction, then the simulated flux will be detrended
+    //
+    // FIXME: add_integrated_samples() is currently not unit-tested (or python-wrapped).
 
     template<typename T> void eval_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const;
     template<typename T> void add_integrated_samples(T *out, double t0, double t1, ssize_t nt, const phase_model_base &pm) const;
@@ -116,8 +118,11 @@ public:
     // The DC mode rho_0 will equal 'mean_flux' if detrend=False, or 0 if detrend=True.
     //
     // The return value is a 1D array of length 'nout'.  If nout=0 (the default), then it defaults to
-    // (internal_nphi/2+10, the number of Fourier coefficients which are computed internally.  (If 'nout'
+    // (internal_nphi/2+1), the number of Fourier coefficients which are computed internally.  (If 'nout'
     // is larger than this, then the returned array is zero-padded.
+    //
+    // The returned FFT does not include a time-sample window function.  You may want to multiply the
+    // output by j_0(pi*dphi/2), where dphi = (pulse_freq * dt_sample).
 
     template<typename T> void get_profile_fft(T *out, int nout) const;
 
@@ -133,10 +138,12 @@ protected:
     double _mf_multiplier = 0.0;  // ratio (mean_flux / peak_flux), constant after construction
     
     // Note: padded to length (internal_nphi+1), for internal convenience interpolating.
+    // These are always detrended (even if the 'detrend' flag is not set)
     std::vector<double> detrended_profile;
     std::vector<double> detrended_profile_antider;
     
-    // Length internal_nphi2, normalized to profile_fft[0]=1.
+    // Length internal_nphi2, normalized to peak_flux=1.
+    // This is detrended if the 'detrend' flag is set.
     std::vector<double> profile_fft;
 
     mutable std::vector<double> phi_tmp;   // length (internal_phi_block_size + 1)
