@@ -436,6 +436,15 @@ void von_mises_profile::get_profile_fft(T *out, int nout) const
 }
 
 
+string von_mises_profile::str() const
+{
+    stringstream ss;
+    ss << "simpulse.von_mises_profile(duty_cycle=" << duty_cycle << ", detrend=" 
+       << (detrend ? "true" : "false") << ", peak_flux=" << _peak_flux << ")";
+    return ss.str();
+}
+
+
 // -------------------------------------------------------------------------------------------------
 
 

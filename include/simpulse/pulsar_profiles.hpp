@@ -127,6 +127,8 @@ public:
 
     template<typename T> void get_profile_fft(T *out, int nout) const;
 
+    // String representation
+    std::string str() const;
 
     // This method is intended for debugging (hence the "_slow"!)
     // Returns the average flux over phase (not time) interval [phi0, phi1].

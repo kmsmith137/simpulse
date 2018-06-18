@@ -51,6 +51,8 @@ void wrap_phase_model_base(py::module &m)
 	     "The return value is an array of length 'nsamples', whose i-th entry is the phase model Phi(t)\n"
 	     "evaluated at t = ((nsamples-i-1)*t0 + i*t1) / (nsamples-1).\n\n"
 	     "Can be called with nderivs=0 to get Phi(t), or nderivs > 0 to get derivatives (d/dt)^n Phi.")
+
+	.def("__repr__", &phase_model_base::str)
     ;
 }
 

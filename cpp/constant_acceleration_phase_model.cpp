@@ -35,4 +35,13 @@ double constant_acceleration_phase_model::eval_phi(double t, int nderivs) const
 }
 
 
+// virtual override
+string constant_acceleration_phase_model::str() const
+{
+    stringstream ss;
+    ss << "simpulse.constant_acceleration_phase_model(phi0=" << phi0 << ", f0=" << f0 << ", fdot=" << fdot << ", t0=" << t0 << ")";
+    return ss.str();
+}
+
+
 }  // namespace simpulse

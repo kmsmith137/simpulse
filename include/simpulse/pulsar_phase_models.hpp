@@ -29,7 +29,6 @@ struct phase_model_base
 
     virtual double eval_phi(double t, int nderivs=0) const = 0;
 
-
     // Evaluates the phase model at a sequence of equally spaced time samples.
     // The 't0' and 't1' args are the starting/ending times of the sampled region.
     // The 'phi_out' argument is an array of length 'nsamples'.
@@ -40,6 +39,9 @@ struct phase_model_base
     // (FIXME: I'm planning to time this, to see how much it actually matters!)
 
     virtual void eval_phi_sequence(double t0, double t1, ssize_t nsamples, double *phi_out, int nderivs=0) const;
+
+    // String representation
+    virtual std::string str() const = 0;
 };
 
 
@@ -66,6 +68,7 @@ struct constant_acceleration_phase_model : public phase_model_base
     const double t0;
 
     virtual double eval_phi(double t, int nderivs) const override;
+    virtual std::string str() const override;
 };
     
 

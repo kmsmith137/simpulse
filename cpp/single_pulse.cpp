@@ -318,7 +318,7 @@ double single_pulse::get_signal_to_noise(double sample_dt, const double *sample_
 
 void single_pulse::print(ostream &os) const
 {
-    os << "single_pulse(pulse_nt=" << pulse_nt << ",nfreq=" << nfreq << ",freq_lo_MHz=" << freq_lo_MHz << ",freq_hi_MHz=" << freq_hi_MHz
+    os << "simpulse.single_pulse(pulse_nt=" << pulse_nt << ",nfreq=" << nfreq << ",freq_lo_MHz=" << freq_lo_MHz << ",freq_hi_MHz=" << freq_hi_MHz
        << ",dm=" << dm << ",sm=" << sm << ",intrinsic_width=" << intrinsic_width << ",fluence=" << fluence 
        << ",spectral_index=" << spectral_index << ",undispersed_arrival_time=" << undispersed_arrival_time << ")";
 }
