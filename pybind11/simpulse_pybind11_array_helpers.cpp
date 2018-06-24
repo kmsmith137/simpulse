@@ -9,11 +9,25 @@ namespace simpulse_pybind11 {
 #endif
 
 
-string shape_string(const py::array &a)
+bool is_contiguous(py::array &a)
 {
-    int ndim = a.ndim();
+    ssize_t ndim = a.ndim();
     const ssize_t *shape = a.shape();
+    const ssize_t *stride = a.strides();
 
+    ssize_t expected_stride = a.itemsize();
+    for (ssize_t i = ndim-1; i >= 0; i--) {
+	if (stride[i] != expected_stride)
+	    return false;
+	expected_stride *= shape[i];
+    }
+
+    return true;
+}
+
+
+string shape_string(int ndim, const ssize_t *shape)
+{
     stringstream ss;
     ss << "(";
     
@@ -25,6 +39,27 @@ string shape_string(const py::array &a)
 
     ss << ((ndim > 1) ? ")" : ",)");
     return ss.str();
+}
+
+
+string shape_string(const py::array &a)
+{
+    return shape_string(a.ndim(), a.shape());
+}
+
+
+bool shape_equals(py::array &a, int expected_ndim, const ssize_t *expected_shape)
+{
+    const ssize_t *actual_shape = a.shape();
+    
+    if (a.ndim() != expected_ndim)
+	return false;
+    
+    for (ssize_t i = 0; i < expected_ndim; i++)
+	if (actual_shape[i] != expected_shape[i])
+	    return false;
+
+    return true;
 }
 
 

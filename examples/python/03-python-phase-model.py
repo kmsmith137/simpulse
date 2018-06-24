@@ -100,6 +100,23 @@ class sinusoidal_phase_model(simpulse.phase_model_base):
                 + c * (np.sin(2*np.pi*theta) - np.sin(2*np.pi*self.orbital_phase)))
 
 
+    # Optional: if eval_phi_sequence() is also defined, then simulating pulsars may be
+    # significantly faster.  This function should return a 1D array of length 'nsamples',
+    # containing phi(t) values sampled at an evenly spaced set of points between t0 and t1.
+    #
+    # If eval_phi_sequence() is not defined, then libsimpulse will emulate it, by calling
+    # eval_phi() in a loop (equivalent but possibly slower).
+
+    def eval_phi_sequence(self, t0, t1, nsamples, nderivs=0):
+
+        # Our implementation of eval_phi() happens to be written in a way where the 't'
+        # argument can be either a scalar or an array.  Therefore, we can trivially
+        # implement eval_phi_sequence() as follows.
+
+        t = np.linspace(t0, t1, nsamples)
+        return self.eval_phi(t, nderivs)
+
+
 ############################################################################################
 #
 # The rest of the script is similar to example 2 ("simulating a pulsar") and mostly

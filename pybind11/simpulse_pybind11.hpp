@@ -1,6 +1,7 @@
 #ifndef _SIMPULSE_PYBIND11_HPP
 #define _SIMPULSE_PYBIND11_HPP
 
+#include <iostream>
 #include <pybind11/pybind11.h>
 
 

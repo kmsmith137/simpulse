@@ -28,7 +28,11 @@ inline int array_type_num(pybind11::array &a)
 }
 
 
+extern bool is_contiguous(pybind11::array &a);
+
 extern std::string shape_string(const pybind11::array &a);
+extern std::string shape_string(int ndim, const ssize_t *shape);
+extern bool shape_equals(pybind11::array &a, int expected_ndim, const ssize_t *expected_shape);
 
 
 }  // namespace simpulse_pybind11

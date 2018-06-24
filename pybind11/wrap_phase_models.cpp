@@ -1,9 +1,9 @@
 #include "simpulse_pybind11.hpp"
+#include "simpulse_pybind11_array_helpers.hpp"
+
 #include "../include/simpulse/internals.hpp"  // sp_assert()
 #include "../include/simpulse/pulsar_phase_models.hpp"
 
-#include <iostream>
-#include <pybind11/numpy.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -26,12 +26,28 @@ struct phase_model_trampoline : public phase_model_base
 	PYBIND11_OVERLOAD_PURE(double, phase_model_base, eval_phi, t, nderivs);
     }
 
-#if 0
     virtual void eval_phi_sequence(double t0, double t1, ssize_t nsamples, double *phi_out, int nderivs) const override
     {
-	// Not sure what to put here.
+	py::gil_scoped_acquire gil;
+	py::function overload = pybind11::get_overload(this, "eval_phi_sequence");
+
+	if (!overload)
+	    return phase_model_base::eval_phi_sequence(t0, t1, nsamples, phi_out, nderivs);
+
+	auto o = overload(t0, t1, nsamples, nderivs);
+	auto a = py::cast<in_carray<double>> (o);
+
+	if (!is_contiguous(a))
+	    throw runtime_error("simpulse internal error: is_contiguous(in_carray<T>) returned false, this should never happen");
+
+	if (!shape_equals(a, 1, &nsamples)) {
+	    stringstream ss;
+	    ss << "simpulse: eval_phi_sequence() returned shape-" << shape_string(a) << " array, expected shape (" << nsamples << ",)";
+	    throw runtime_error(ss.str());
+	}
+
+	memmove(phi_out, a.data(), nsamples * sizeof(double));
     }
-#endif
 
     virtual std::string str() const override
     {
