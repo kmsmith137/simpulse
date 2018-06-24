@@ -18,13 +18,12 @@ namespace simpulse_pybind11 {
 
 struct phase_model_trampoline : public phase_model_base 
 {
-    // Inherit constructors (not sure if this is necessary)
-    using phase_model_base::phase_model_base;
-
     virtual double eval_phi(double t, int nderivs) const override
     {
+	// FIXME replace this by something which prints a more helpful error message if function is not defined on python side.
 	PYBIND11_OVERLOAD_PURE(double, phase_model_base, eval_phi, t, nderivs);
     }
+
 
     virtual void eval_phi_sequence(double t0, double t1, ssize_t nsamples, double *phi_out, int nderivs) const override
     {
@@ -48,6 +47,7 @@ struct phase_model_trampoline : public phase_model_base
 
 	memmove(phi_out, a.data(), nsamples * sizeof(double));
     }
+
 
     virtual std::string str() const override
     {
@@ -74,7 +74,10 @@ void wrap_phase_model_base(py::module &m)
 	"This virtual base class represents a pulsar phase model Phi(t).  By definition, this is a function which takes\n"
 	"integer values at times when pulses are observed.  The specific form of Phi(t) is determined by the subclass.\n"
 	"\n"
-	"Currently, only one subclass of phase_model_base is implemented: constant_acceleration_phase_model (see below).\n";
+	"Currently, only one subclass is implemented: constant_acceleration_phase_model.\n"
+	"\n"
+	"It is possible to define subclasses from python.  A python subclass must define the eval_phi() method,\n"
+	"and may optionally define eval_phi_sequence().  See :ref:`Example 3: python phase model` for an example.";
 
 
     auto eval_phi_sequence = [](phase_model_base &self, double t0, double t1, ssize_t nsamples, int nderivs)
