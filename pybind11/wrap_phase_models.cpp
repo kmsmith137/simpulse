@@ -16,6 +16,30 @@ namespace simpulse_pybind11 {
 #endif
 
 
+struct phase_model_trampoline : public phase_model_base 
+{
+    // Inherit constructors (not sure if this is necessary)
+    using phase_model_base::phase_model_base;
+
+    virtual double eval_phi(double t, int nderivs) const override
+    {
+	PYBIND11_OVERLOAD_PURE(double, phase_model_base, eval_phi, t, nderivs);
+    }
+
+#if 0
+    virtual void eval_phi_sequence(double t0, double t1, ssize_t nsamples, double *phi_out, int nderivs) const override
+    {
+	// Not sure what to put here.
+    }
+#endif
+
+    virtual std::string str() const override
+    {
+	return "[XXX phase_model_trampoline]";
+    }
+};
+
+
 void wrap_phase_model_base(py::module &m)
 {
     py::options options;
@@ -38,11 +62,16 @@ void wrap_phase_model_base(py::module &m)
     };
 
 
-    py::class_<phase_model_base>(m, "phase_model_base", doc)
+    py::class_<phase_model_base, phase_model_trampoline>(m, "phase_model_base", doc)
+	.def(py::init<>())
+
 	.def("eval_phi", &phase_model_base::eval_phi, "t"_a, "nderivs"_a = 0,
 	     "eval_phi(t, nderivs=0) -> float\n\n"
 	     "Evaluates the phase model Phi(t) at a single time 't'.\n"
-	     "Can be called with nderivs=0 to get Phi(t), or nderivs > 0 to get derivatives (d/dt)^n Phi.")
+	     "\n"
+	     "The ``nderivs`` argument can be used to compute the n-th derivative (d^n phi) / dt^n.\n"
+	     "Currently we don't actually use 'nderivs' anywhere, and I may remove it from the\n"
+	     "simpulse API eventually!\n")
 
 	.def("eval_phi_sequence", eval_phi_sequence, "t0"_a, "t1"_a, "nsamples"_a, "nderivs"_a = 0,
 	     "eval_phi_sequence(t0, t1, nsamples, nderivs=0) -> (1D array)\n\n"

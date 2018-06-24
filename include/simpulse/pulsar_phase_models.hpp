@@ -42,6 +42,8 @@ struct phase_model_base
 
     // String representation
     virtual std::string str() const = 0;
+    
+    virtual ~phase_model_base() = default;
 };
 
 
