@@ -1,8 +1,7 @@
 #include "simpulse_pybind11.hpp"
+#include "simpulse_pybind11_array_helpers.hpp"
 #include "../include/simpulse/single_pulse.hpp"
 #include "../include/simpulse/internals.hpp"   // sp_assert()
-
-#include <pybind11/numpy.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -13,42 +12,6 @@ namespace simpulse_pybind11 {
 #if 0
 }  // pacify emacs c-mode
 #endif
-
-
-template<typename T>
-using in_carray = py::array_t<T, py::array::c_style | py::array::forcecast>;
-
-
-// Returns NPY_FLOAT, NPY_DOUBLE, etc.
-// Also available as e.g. py::detail::npy_api::NPY_FLOAT_
-inline int array_type_num(py::array &a)
-{
-    using arr_t = py::detail::PyArray_Proxy;
-    using descr_t = py::detail::PyArrayDescr_Proxy;
-
-    arr_t *ap = reinterpret_cast<arr_t *> (a.ptr());
-    descr_t *dp = reinterpret_cast<descr_t *> (ap->descr);
-    return dp->type_num;
-}
-
-
-static string shape_string(const py::array &a)
-{
-    int ndim = a.ndim();
-    const ssize_t *shape = a.shape();
-
-    stringstream ss;
-    ss << "(";
-    
-    for (int i = 0; i < ndim; i++) {
-	if (i > 0) 
-	    ss << ",";
-	ss << shape[i];
-    }
-
-    ss << ((ndim > 1) ? ")" : ",)");
-    return ss.str();
-}
 
 
 // Helper class used in get_signal_to_noise().
