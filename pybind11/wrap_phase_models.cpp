@@ -51,7 +51,16 @@ struct phase_model_trampoline : public phase_model_base
 
     virtual std::string str() const override
     {
-	return "[XXX phase_model_trampoline]";
+	py::gil_scoped_acquire gil;
+	py::function overload = pybind11::get_overload(this, "__repr__");
+
+	if (!overload) {
+	    string class_name = py::cast(this).get_type().attr("__name__").cast<string>();
+	    return "<" + class_name + " instance>";
+	}
+	
+	auto o = overload();
+	return py::cast<string> (o);
     }
 };
 
