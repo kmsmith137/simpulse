@@ -3,6 +3,8 @@ import numpy as np
 
 def make_stairsteps(data, t0, t1):
     """
+    make_stairsteps(data, t0, t1) -> (tvec, yvec)
+
     A utility function for plotting a discrete time series as "stairsteps", in order
     to visually represent the discrete sampling.
 

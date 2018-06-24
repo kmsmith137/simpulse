@@ -2,6 +2,7 @@
 #include "../include/simpulse/internals.hpp"  // sp_assert()
 #include "../include/simpulse/pulsar_phase_models.hpp"
 
+#include <iostream>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
@@ -13,7 +14,6 @@ namespace simpulse_pybind11 {
 #if 0
 }  // pacify emacs c-mode
 #endif
-
 
 
 void wrap_phase_model_base(py::module &m)

@@ -41,10 +41,14 @@ data = sample_rms * np.random.standard_normal((p.nfreq, nt))
 p.add_to_timestream(data, t0, t1)
 
 # Make the plot.  Some matplotlib trivia here:
+#
 #   - interpolation='none' to disable interpolation (watch out: not the same as 
 #       interpolation=None, which uses "default" interpolation!)
+#
 #   - extent=(left,right,bottom,top) defines the ranges on the xy-axes
+#
 #   - if you use 'extent', you probably also want aspect='auto'
+#
 #   - origin='lower' puts frequency index 0 on bottom of the plot
 
 plt.imshow(data, interpolation='none', origin='lower',

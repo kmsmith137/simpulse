@@ -75,12 +75,12 @@ plt.plot(tvec, yvec, 'b-', lw=2)
 # simpulse, we do it differently, by calling the functions:
 #
 #   phase_model.eval_phi(t) -> evaluate instantaneous phase at time t
-#   profile.point_eval(phi) -> evaluate instantaneous pulsar flux at phase phi
+#   profile.eval_instantaneous(phi) -> evaluate instantaneous pulsar flux at phase phi
 
 nt_fine = 2048
 t_fine = np.linspace(t0, t1, nt_fine)
 phi_fine = [ phase_model.eval_phi(t) for t in t_fine ]
-rho_fine = [ profile.point_eval(phi) for phi in phi_fine ]
+rho_fine = [ profile.eval_instantaneous(phi) for phi in phi_fine ]
 plt.plot(t_fine, rho_fine, 'r:')
 
 plt.xlabel('Time (seconds)')
