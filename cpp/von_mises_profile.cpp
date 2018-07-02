@@ -206,7 +206,8 @@ inline void _integrate_samples(Tout &out, double t0, double t1, ssize_t nt, cons
 	double t1_block = _linterp(nt1/double(nt), t0, t1);
 
 	// Evaluate phase model in this block.
-	// Note that the number of 'phi' values is (nt1-nt0+1), not (nt1-nt0).
+	// Note that the number of 'phi' values is nphi=(nt1-nt0+1), not nphi=(nt1-nt0).
+	// As a consequence, phase_model_base::eval_phi_sequence() is always called with nphi > 1 as expected.
 	pm.eval_phi_sequence(t0_block, t1_block, nt1-nt0+1, &phi_tmp[0]);
 	
 	ihelper h0(phi_tmp[0], internal_nphi, rho);
