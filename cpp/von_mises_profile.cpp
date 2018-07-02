@@ -131,7 +131,7 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 	rho_a[iphi+1] = rho_a[iphi] + x;
     }
 
-    sp_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-11);
+    sp_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-10);
 }
 
 
