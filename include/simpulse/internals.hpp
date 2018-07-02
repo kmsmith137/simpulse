@@ -18,8 +18,9 @@
 #endif
 
 // sp_assert(): like assert, but throws an exception in order to work smoothly with python.
-#define sp_assert(cond) \
-    sp_assert2(cond, "simpulse: assertion '" __STRING(cond) "' failed (" __FILE__ ":" __STRING(__LINE__) ")\n")
+#define sp_assert(cond) _sp_assert(cond, __LINE__)
+#define _sp_assert(cond, line) \
+    sp_assert2(cond, "simpulse: assertion '" __STRING(cond) "' failed (" __FILE__ ":" __STRING(line) ")\n")
 
 // sp_assert2(): use customized error message
 #define sp_assert2(cond,msg) \
