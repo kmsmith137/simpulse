@@ -131,7 +131,18 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 	rho_a[iphi+1] = rho_a[iphi] + x;
     }
 
-    sp_assert(fabs(rho_a[internal_nphi] - 0.0) < 1.0e-10);
+    // Original assert here was:
+    // 
+    //   sp_assert(fabs(rho_a[internal_nphi]) < 1.0e-10);
+    //
+    // This seems to be numerically flaky, so in the block of code below,
+    // I raised the threshold and returned a more verbose error message.
+
+    if (fabs(rho_a[internal_nphi]) > 1.0e-9) {
+	stringstream ss;
+	ss << "simpulse::von_mises_profile: detrended profile failed to sum to zero (epsilon=" << fabs(rho_a[internal_nphi]) << ")";
+	throw runtime_error(ss.str());
+    }
 }
 
 
