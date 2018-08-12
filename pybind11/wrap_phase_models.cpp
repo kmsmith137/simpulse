@@ -152,4 +152,47 @@ void wrap_constant_acceleration_phase_model(py::module &m)
 }
 
 
+void wrap_keplerian_binary_phase_model(py::module &m)
+{
+    py::options options;
+    options.disable_function_signatures();
+
+    // This string becomes the python docstring, and also goes into the sphinx documentation.
+    // If you change it and do 'make install', the python docstring will be updated.
+    //
+    // However, the sphinx documentation won't be updated until you run the 'run-sphinx.py'
+    // script in the simpulse_docs repo.  (This updates the "local" sphinx documentation,
+    // to update the web-published version, you need to do 'git push' in the simpulse_docs repo.)
+
+    const char *doc =
+	"This class represents a binary pulsar with relativistic effects neglected\n"
+	"(Subclass of phase_model_base.)\n"
+	"\n"
+	"Constructor syntax::\n"
+	"\n"
+	"    pm = simpulse.keplerian_binary_phase_model(e, a, b, Prob, nx, ny, P, t0, phi0)\n"
+	"\n"
+	"where:\n\n"
+	"    e = eccentricity\n\n"
+	"    a = semimajor axis\n\n"
+	"    b = semiminor axis (note: e = sqrt(1 - b^2 / a^2) )\n\n"
+	"    Porb = orbital period\n\n"
+	"    nx, ny = unit vector in the direction of Earth\n\n"
+	"    P = pulse period\n\n"
+	"    t0 = time delay parameter between Earth and binary center of mass (mod Porb)\n\n"
+	"    phi0 = initial phase (mod 1)";
+    
+
+    py::class_<keplerian_binary_phase_model, phase_model_base>(m, "keplerian_binary_phase_model", doc)
+	// The following boilerplate exports the C++ constructor to python.
+	// Note that you need to declare the constructor argument types explicitly (double, double, ...)
+	// and provide names for the arguments.  
+	// Warning: if something is wrong here (for example, if the number of arguments doesn't match the 
+	// C++ constructor) you'll get an incomprehensible compiler error!)
+	.def(py::init<double,double,double,double,double,double,double,double,double>(), 
+	     "e"_a, "a"_a, "b"_a, "Porb"_a, "nx"_a, "ny"_a, "P"_a, "t0"_a, "phi0"_a)
+    ;
+}
+
+
 }  // namespace simpulse_pybind11

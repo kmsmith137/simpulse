@@ -74,6 +74,31 @@ struct constant_acceleration_phase_model : public phase_model_base
 };
     
 
+// keplerian_binary_phase_model
+//
+// This class represents a binary pulsar with relativistic effects neglected.
+
+struct keplerian_binary_phase_model : public phase_model_base
+{
+    // Constructor arguments:
+    //
+    //   e = eccentricity
+    //   a = semimajor axis
+    //   b = semiminor axis (note: e = sqrt(1 - b^2 / a^2) )
+    //   Porb = orbital period
+    //   nx, ny = unit vector in the direction of Earth
+    //   P = pulse period
+    //   t0 = time delay parameter between Earth and binary center of mass (mod Porb)
+    //   phi0 = initial phase (mod 1)
+
+    keplerian_binary_phase_model(double e, double a, double b, double Porb, double nx, double ny, double P, double t0, double phi0);
+
+    // Placeholder: members of class not defined yet, except for the following 
+
+    virtual double eval_phi(double t, int nderivs) const override;
+    virtual std::string str() const override;    
+};
+
 
 }  // namespace simpulse
 

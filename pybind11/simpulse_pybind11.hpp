@@ -17,6 +17,7 @@ void wrap_single_pulse(pybind11::module &m);
 // wrap_phase_models.cpp
 void wrap_phase_model_base(pybind11::module &m);
 void wrap_constant_acceleration_phase_model(pybind11::module &m);
+void wrap_keplerian_binary_phase_model(pybind11::module &m);
 
 // wrap_von_mises_profile.cpp
 void wrap_von_mises_profile(pybind11::module &m);
