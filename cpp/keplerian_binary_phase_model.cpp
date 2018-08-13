@@ -1,5 +1,6 @@
 #include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/internals.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -64,12 +65,11 @@ double keplerian_binary_phase_model::eval_phi(double t, int nderivs) const
 
     double dEdtobs = 1 / (Porb / 2 / M_PI * (1 - e * cos(E)) + a * nx * sin(E) - b * ny * cos(E));
     if (nderivs == 1)
-	return Porb / 2 / M_PI * (1 - e * cos(E)) * dEdtobs;
+	return Porb / 2 / M_PI / P * (1 - e * cos(E)) * dEdtobs;
     if (nderivs == 2)
     {
-	double alpha = Porb / 2 / M_PI / P * (1 - e * cos(E));
-	return Porb / 2 / M_PI / P * e * sin(E) * pow(dEdtobs, 2) -
-	    alpha * (Porb / 2 / M_PI * sin(E) + a * nx * cos(E) + b * ny * sin(E)) * pow(dEdtobs, 3);
+        return Porb / 2 / M_PI / P * pow(dEdtobs, 2) * 
+	       (e * sin(E) - (1 - e * cos(E)) * (Porb / 2 / M_PI * e * sin(E)  + a * nx * cos(E) + b * ny * sin(E)) * dEdtobs);
     }
     throw runtime_error("keplerian_binary_phase_model::eval_phi() nderivs != 0, 1, 2 not implemented yet");
 }
