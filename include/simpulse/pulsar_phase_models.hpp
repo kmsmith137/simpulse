@@ -93,10 +93,20 @@ struct keplerian_binary_phase_model : public phase_model_base
 
     keplerian_binary_phase_model(double e, double a, double b, double Porb, double nx, double ny, double P, double t0, double phi0);
 
-    // Placeholder: members of class not defined yet, except for the following 
+    const double e;
+    const double a;
+    const double b;
+    const double Porb;
+    const double nx;
+    const double ny;
+    const double P;
+    const double t0;
+    const double phi0;
 
     virtual double eval_phi(double t, int nderivs) const override;
-    virtual std::string str() const override;    
+    virtual std::string str() const override;
+
+    double find_E(double t) const;
 };
 
 

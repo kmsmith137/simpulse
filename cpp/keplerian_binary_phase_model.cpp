@@ -1,6 +1,3 @@
-// When implementing 'class keplerian_binary_phase_model', you may find it useful to look at
-// constant_acceleration_phase_model.cpp, for a simple example of a phase_model class in C++.
-
 #include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/internals.hpp"
 
@@ -13,32 +10,78 @@ namespace simpulse {
 #endif
 
 
-// Note: if you add more constructor arguments, you'll need to change the python-linkage
-// boilerplate in pybind11/wrap_phase_models.cpp
-
-keplerian_binary_phase_model::keplerian_binary_phase_model(double e, double a, double b, double Porb, double nx, double ny, double P, double t0, double phi0)
+keplerian_binary_phase_model::keplerian_binary_phase_model(double e_, double a_, double b_, double Porb_, double nx_, double ny_, double P_, double t0_, double phi0_)
+    : e(e_), a(a_), b(b_), Porb(Porb_), nx(nx_), ny(ny_), P(P_), t0(t0_), phi0(phi0_)
 {
-    // Placeholder
+    sp_assert2(e < 1, "simpulse::keplerian_binary_phase_model: e must be in [0, 1)");
+    sp_assert2(sqrt(nx * nx + ny * ny) <= 1, "simpulse::keplerian_binary_phase_model: nx and ny must be components of a unit vector");
+    sp_assert2(b == sqrt(a * a * (1 - e * e)), "simpulse::keplerian_binary_phase_model: e, a, and b are related by e = sqrt(1 - b^2 / a^2)");
+    sp_assert2(max(a, b) < Porb / 10, "simpulse::keplerian_binary_phase_model: a and b must be much smaller than Porb");
 }
 
+
+// Newton's method to solve for E given a tobs
+double keplerian_binary_phase_model::find_E(double tobs) const
+{
+    // We precompute coefficients a, b, c, d so that the equation being solved is
+    // f(E) = C E - A cos(E) - B sin(E) + D = 0
+    // This precomputation speeds things up a little.
+    double C = Porb / 2 / M_PI;
+    double D = t0 + a * nx * e - tobs;
+    double A = a * nx;
+    double B = b * ny + C * e;
+
+    double E = -D / C;
+    double thresh = 1.0e-7 * P;
+
+    for (int i = 0; i < 20; i++)
+    {
+	double cosE = cos(E);
+	double sinE = sin(E);
+
+	// Left-hand side f(E)
+	double f_E = C * E - A * cosE - B * sinE + D;
+	if (abs(f_E) < thresh)
+	    return E;
+	
+	// Derivative df/dE
+	double df_dE = C + A * sinE - B * cosE;
+
+	// Newton's method update
+	E -= f_E / df_dE;
+    }
+
+    throw runtime_error("keplerian_binary_phase_model::find_E failed to converge (should never happen)");
+}
 
 // virtual override
 double keplerian_binary_phase_model::eval_phi(double t, int nderivs) const
 {
-    // Placeholder
-    throw runtime_error("keplerian_binary_phase_model::eval_phi() not implemented yet");
+    double E = find_E(t);
+    
+    if (nderivs == 0)
+	return Porb / 2 / M_PI * (E - e * sin(E)) / P + phi0;
+
+    double dEdtobs = 1 / (Porb / 2 / M_PI * (1 - e * cos(E)) + a * nx * sin(E) - b * ny * cos(E));
+    if (nderivs == 1)
+	return Porb / 2 / M_PI * (1 - e * cos(E)) * dEdtobs;
+    if (nderivs == 2)
+    {
+	double alpha = Porb / 2 / M_PI / P * (1 - e * cos(E));
+	return Porb / 2 / M_PI / P * e * sin(E) * pow(dEdtobs, 2) -
+	    alpha * (Porb / 2 / M_PI * sin(E) + a * nx * cos(E) + b * ny * sin(E)) * pow(dEdtobs, 3);
+    }
+    throw runtime_error("keplerian_binary_phase_model::eval_phi() nderivs != 0, 1, 2 not implemented yet");
 }
 
 
 // virtual override
 string keplerian_binary_phase_model::str() const
 {
-    // Placeholder.
-    // Returns human-readable string representation of the phase_model object.
-    // (To call it, try 'print phase_model' from python.)
-
-    throw runtime_error("keplerian_binary_phase_model::str() not implemented yet");
+    stringstream ss;
+    ss << "simpulse.keplerian_binary_phase_model(e=" << e << ", a=" << a << ", b=" << b << ", Porb=" <<
+	Porb << ", nx=" << nx << ", ny=" << ny << ", P=" << P << ", t0=" << t0 << ", phi0=" << phi0 << ")";
+    return ss.str();
 }
-
 
 }  // namespace simpulse
