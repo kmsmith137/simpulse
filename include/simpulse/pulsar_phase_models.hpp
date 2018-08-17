@@ -93,6 +93,7 @@ struct keplerian_binary_phase_model : public phase_model_base
 
     keplerian_binary_phase_model(double e, double a, double b, double Porb, double nx, double ny, double P, double t0, double phi0);
 
+    // Note: if more members are added/removed here, you'll need to update pybind11/wrap_phase_models.cpp
     const double e;
     const double a;
     const double b;

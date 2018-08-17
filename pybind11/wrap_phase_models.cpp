@@ -191,6 +191,17 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	// C++ constructor) you'll get an incomprehensible compiler error!)
 	.def(py::init<double,double,double,double,double,double,double,double,double>(), 
 	     "e"_a, "a"_a, "b"_a, "Porb"_a, "nx"_a, "ny"_a, "P"_a, "t0"_a, "phi0"_a)
+
+	// Make const public members visible from python.  (The last argument is the docstring.)
+	.def_readonly("e", &keplerian_binary_phase_model::e, "Eccentricity")
+	.def_readonly("a", &keplerian_binary_phase_model::a, "Semimajor axis")
+	.def_readonly("b", &keplerian_binary_phase_model::b, "Semiminor axis")
+	.def_readonly("Porb", &keplerian_binary_phase_model::Porb, "Orbital period")
+	.def_readonly("nx", &keplerian_binary_phase_model::nx, "X-component of unit vector in direction of Earth")
+	.def_readonly("ny", &keplerian_binary_phase_model::ny, "Y-component of unit vector in direction of Earth")
+	.def_readonly("P", &keplerian_binary_phase_model::P, "Pulse period")
+	.def_readonly("t0", &keplerian_binary_phase_model::t0, "Time delay parameter between Earth and binary center of mass (mod Porb)")
+	.def_readonly("phi0", &keplerian_binary_phase_model::phi0, "Initial phase (mod 1)")
     ;
 }
 
