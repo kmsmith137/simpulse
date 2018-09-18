@@ -203,6 +203,46 @@ void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double
 }
 
 
+// Helper function called by single_pulse::compare_to_timestream().
+template<typename T>
+void single_pulse::_compare_in_frequency_channel(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, double in_t1, int in_nt, int ifreq) const
+{
+    sp_assert(in_d);
+    sp_assert(in_w);
+    sp_assert(out_wsd);
+    sp_assert(out_wss);
+    sp_assert(in_nt > 0);
+    sp_assert(in_t0 < in_t1);
+    sp_assert(ifreq >= 0 && ifreq < nfreq);
+
+    // Convert input times to "sample coords"
+    double s0 = pulse_nt * (in_t0 - undispersed_arrival_time - pulse_t0[ifreq]) / (pulse_t1[ifreq] - pulse_t0[ifreq]);
+    double s1 = pulse_nt * (in_t1 - undispersed_arrival_time - pulse_t0[ifreq]) / (pulse_t1[ifreq] - pulse_t0[ifreq]);
+
+    if ((s0 >= pulse_nt) || (s1 <= 0))
+	return;
+    
+    double in_dt = (in_t1 - in_t0) / in_nt;
+    double w = fluence * pulse_freq_wt[ifreq] / in_dt;
+    const double *cs = &pulse_cumsum[ifreq*(pulse_nt+1)];
+
+    double wsd = 0.0;
+    double wss = 0.0;
+
+    for (int it = 0; it < in_nt; it++) {
+	double a = _interpolate_cumsum(pulse_nt, cs, s0 + (it)*(s1-s0)/(double)in_nt);
+	double b = _interpolate_cumsum(pulse_nt, cs, s0 + (it+1)*(s1-s0)/(double)in_nt);
+	double s = w * (b-a);
+	
+	wsd += in_w[it] * s * in_d[it];
+	wss += in_w[it] * s * s;
+    }
+
+    *out_wsd = wsd;
+    *out_wss = wss;
+}
+
+
 template<typename T>
 void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const
 {
@@ -222,6 +262,32 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
 
     for (int ifreq = 0; ifreq < nfreq; ifreq++)
 	_add_pulse_to_frequency_channel(out + ifreq*stride, out_t0, out_t1, out_nt, ifreq, weight);
+}
+
+
+template<typename T>
+void single_pulse::compare_to_timestream(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, double in_t1, int in_nt, int in_dstride, int in_wstride) const
+{
+    if (in_dstride == 0)
+	in_dstride = in_nt;
+    if (in_wstride == 0)
+	in_wstride = in_nt;
+
+    sp_assert2(out_wsd, "single_pulse::compare_to_timestream(): 'out_wsd' pointer must be non-null");
+    sp_assert2(out_wss, "single_pulse::compare_to_timestream(): 'out_wss' pointer must be non-null");
+    sp_assert2(in_d, "single_pulse::compare_to_timestream(): 'in_d' pointer must be non-null");
+    sp_assert2(in_w, "single_pulse::compare_to_timestream(): 'in_w' pointer must be non-null");
+    sp_assert2(in_nt > 0, "single_pulse::compare_to_timestream() called with in_nt <= 0");
+    sp_assert2(in_t0 < in_t1, "single_pulse::compare_to_timestream() called with in_t0 >= in_t1");
+
+    // Allow negative strides as explained in simpulse.hpp
+    sp_assert2(abs(in_dstride) >= in_nt, "single_pulse::compare_to_timestream(): the 'in_dstride' argument must satisfy in_dstride < in_nt");
+    sp_assert2(abs(in_wstride) >= in_nt, "single_pulse::compare_to_timestream(): the 'in_wstride' argument must satisfy in_wstride < in_nt");
+
+    for (int ifreq = 0; ifreq < nfreq; ifreq++)
+	_compare_in_frequency_channel(&out_wsd[ifreq], &out_wss[ifreq],
+				      in_d + ifreq*in_dstride, in_w + ifreq*in_wstride,
+				      in_t0, in_t1, in_nt, ifreq);
 }
 
 
@@ -334,7 +400,9 @@ string single_pulse::str() const
 
 #define INSTANTIATE(T) \
     template void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const; \
-    template void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const
+    template void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const; \
+    template void single_pulse::_compare_in_frequency_channel(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, double in_t1, int in_nt, int ifreq) const; \
+    template void single_pulse::compare_to_timestream(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, double in_t1, int in_nt, int in_dstride, int in_wstride) const
 
 INSTANTIATE(float);
 INSTANTIATE(double);

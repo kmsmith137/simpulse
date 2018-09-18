@@ -36,6 +36,22 @@ struct coerce_to_1d {
 // -------------------------------------------------------------------------------------------------
 
 
+template<typename T>
+static py::tuple _compare_to_timestream(single_pulse &self, strided_2d_array &d, strided_2d_array &w, double t0, double t1)
+{
+    py::array_t<T> wsd{ size_t(self.nfreq) };
+    py::array_t<T> wss{ size_t(self.nfreq) };
+
+    sp_assert(d.nt == w.nt);  // caller should have checked this already
+    
+    self.compare_to_timestream(wsd.mutable_data(), wss.mutable_data(),
+			       d.arr_readonly<T>(), w.arr_readonly<T>(),
+			       t0, t1, d.nt, d.cstride, w.cstride);
+
+    return py::make_tuple(wsd, wss);
+}
+
+
 void wrap_single_pulse(py::module &m)
 {
     py::options options;
@@ -70,51 +86,35 @@ void wrap_single_pulse(py::module &m)
     };
 
 
-    auto add_to_timestream = [](single_pulse &self, py::array &out, double t0, double t1, bool freq_hi_to_lo)
+    auto add_to_timestream = [](single_pulse &self, py::array &out_, double t0, double t1, bool freq_hi_to_lo)
     {
-	constexpr int NPY_ARRAY_C_CONTIGUOUS = py::detail::npy_api::NPY_ARRAY_C_CONTIGUOUS_;
-	constexpr int NPY_ARRAY_WRITEABLE = py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-	constexpr int NPY_ARRAY_UPDATEIFCOPY = 0x1000;    // FIXME not in pybind11/numpy.h (!)
-	
-	const ssize_t *shape = out.shape();
-	const ssize_t *stride = out.strides();
-	const ssize_t itemsize = out.itemsize();
-	const int type_num = array_type_num(out);
-	const bool is_float = (type_num == py::detail::npy_api::NPY_FLOAT_);
-	const bool is_double = (type_num == py::detail::npy_api::NPY_DOUBLE_);
+	// The 'true' argument is 'is_writeable'.
+	strided_2d_array a(out_, self.nfreq, true, freq_hi_to_lo, "simpulse::single_pulse::add_to_timestream() 'out' argument");
 
-	if ((out.ndim() != 2) || (shape[0] != self.nfreq))
-	    throw runtime_error("single_pulse.add_to_timestream(): array has wrong shape");
-	if (!is_float && !is_double)
-	    throw runtime_error("single_pulse.add_to_timestream(): array must be either float32 or float64-valued");
+	if (a.is_float)
+	    self.add_to_timestream(a.arr_writeable<float> (), t0, t1, a.nt, a.cstride);
+	else if (a.is_double)
+	    self.add_to_timestream(a.arr_writeable<double> (), t0, t1, a.nt, a.cstride);
+	else
+	    throw runtime_error("simpulse::single_pulse::add_to_timestream(): should never get here");
+    };
 
-	bool no_copy_needed = (out.writeable() && (stride[0] % itemsize == 0) && (stride[1] == itemsize));
+    // Returns pair (wsd, wss)
+    auto compare_to_timestream = [](single_pulse &self, py::array &d_, py::array &w_, double t0, double t1, bool freq_hi_to_lo)
+    {
+	// The 'false' argument is 'is_writeable'.
+	strided_2d_array d(d_, self.nfreq, false, freq_hi_to_lo, "simpulse::single_pulse::compare_to_timestream() 'd' argument");	
+	strided_2d_array w(w_, self.nfreq, false, freq_hi_to_lo, "simpulse::single_pulse::compare_to_timestream() 'w' argument");	
 
-	if (!no_copy_needed) {
-	    // Make copy
-	    out = py::array::ensure(out, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_WRITEABLE | NPY_ARRAY_UPDATEIFCOPY);
-	    stride = out.strides();
-	    sp_assert(stride[0] == self.nfreq * itemsize);
-	    sp_assert(stride[1] == itemsize);
-	}
+	if (d.nt != w.nt)
+	    throw runtime_error("simpulse::single_pulse::compare_to_timestream(): the shapes of the 'd' and 'w' arguments must be the same");
 
-	// The "c" prefix means "in multiples of 'itemsize', not sizeof(char)".
-	int coffset = 0;
-	int cstride = stride[0] / itemsize;
-
-	if (freq_hi_to_lo) {
-	    coffset = cstride * (self.nfreq-1);
-	    cstride = -cstride;
-	}
-
-	if (is_float) {
-	    sp_assert(itemsize == sizeof(float));
-	    self.add_to_timestream(reinterpret_cast<float *> (out.mutable_data()) + coffset, t0, t1, shape[1], cstride);
-	}
-	else if (is_double) {
-	    sp_assert(itemsize == sizeof(double));
-	    self.add_to_timestream(reinterpret_cast<double *> (out.mutable_data()) + coffset, t0, t1, shape[1], cstride);
-	}
+	if (d.is_float && w.is_float)
+	    return _compare_to_timestream<float> (self, d, w, t0, t1);
+	else if (d.is_double && w.is_double)
+	    return _compare_to_timestream<double> (self, d, w, t0, t1);
+	else
+	    throw runtime_error("simpulse::single_pulse::compare_to_timestream(): currently, the 'w' and 'd' arrays must have the same dtype (float32/float64)");
     };
 
 
@@ -201,9 +201,34 @@ void wrap_single_pulse(py::module &m)
 	     "The 't0' and 't1' args are the endpoints of the sampled region, in seconds relative\n"
 	     "to the same origin as the undispersed_arrival_time.\n"
 	     "\n"
-	     "By default, the frequencies are assumed ordered from lowest to highest.\n"
-	     "WARNING: this ordering is used throughout 'simpulse', but the opposite ordering is used in rf_pipelines and bonsai!!\n"
-	     "To get the opposite ordering (highest-to-lowest), set freq_hi_to_lo=True.")
+	     "The optional 'freq_hi_to_lo' flag indicates whether frequency channels are ordered from\n"
+	     "lowest to highest (the default), or ordered from highest to lowest.")
+
+	.def("compare_to_timestream", compare_to_timestream, "d"_a, "w"_a, "t0"_a, "t1"_a, "freq_hi_to_lo"_a = false,
+	     "compare_to_timestream(d, w, t0, t1, freq_hi_to_lo=False) -> (wsd, wss)\n"
+	     "\n"
+	     "This utility function is intended for use in direct pulse fitters.\n"
+	     "\n"
+	     "The inputs are a 2-d data array d[ifreq,it] and a 2-d weights array w[ifreq,it].\n"
+	     "\n"
+	     "The outputs are 1-d arrays wsd[ifreq] and wss[ifreq], computed as follows::\n"
+	     "\n"
+	     "     wsd[ifreq] = sum_{it} w[ifreq,it] s[ifreq,it] d[ifreq,it]\n"
+	     "     wss[ifreq] = sum_{it} w[ifreq,it] s[ifreq,it]^2\n"
+	     "\n"
+	     "where s[ifreq,it] is the simulated pulse.\n"
+	     "\n"
+	     "Arguments:\n"
+	     "\n"
+	     "   - The 'd' and 'w' arguments are 2-d arrays with shape (nfreq, in_nt).\n"
+	     "\n"
+	     "   - The 't0' and 't1' args are the endpoints of the sampled region, in seconds relative\n"
+	     "     to the undispersed_arrival_time.\n"
+	     "\n"
+	     "   - The optional 'freq_hi_to_lo' flag indicates whether frequency channels are ordered from\n"
+	     "     lowest to highest (the default), or ordered from highest to lowest.\n"
+	     "\n"
+	     "The return value is a 2-tuple (wsd, wss), where wsd and wss are 1-d arrays of length nfreq.")
 
 	.def("get_signal_to_noise", get_signal_to_noise, "sample_dt"_a, "sample_rms"_a = 1.0, "channel_weights"_a = py::none(), "sample_t0"_a = 0.0,
 	     "get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0)\n"

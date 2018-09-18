@@ -80,6 +80,38 @@ public:
     template<typename T> 
     void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0, double weight=1.) const;
     
+
+    // compare_to_timestream(): this utility function is intended for use in direct pulse fitters.
+    //
+    // The inputs are a 2-d data array d[ifreq,it] and a 2-d weights array w[ifreq,it].
+    //
+    // The outputs are 1-d arrays wsd[ifreq] and wss[ifreq], computed as follows:
+    //
+    //     wsd[ifreq] = sum_{it} w[ifreq,it] s[ifreq,it] d[ifreq,it]
+    //     wss[ifreq] = sum_{it} w[ifreq,it] s[ifreq,it]^2
+    //
+    // where s[ifreq,it] is the simulated pulse.
+    //
+    // Arguments::
+    //
+    //   'out_wsd' and 'out_wss' are length-nfreq arrays that compare_to_timestream() will fill.
+    //
+    //   'in_d' and 'in_w' are 2-d arrays with shape (nfreq, in_nt).  The 'in_dstride' and 'in_wstride'
+    //     arguments are pointer offsets between frequencies, in each of these input arrays.  If either
+    //     stride is zero, then it defaults to in_nt.
+    //
+    //    Frequency channels are assumed ordered from lowest to highest.
+    //    WARNING: this is the opposite of the ordering used in rf_pipelines and bonsai!!
+    //
+    //    The 'in_t0' and 'in_t1' args are the endpoints of the sampled region, in seconds relative 
+    //    to the undispersed_arrival_time.
+    //
+    //    The 'in_nt' argument is the number of time samples in the in_d and in_w arrays.
+
+    template<typename T>
+    void compare_to_timestream(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, 
+			       double in_t1, int in_nt, int in_dstride=0, int in_wstride=0) const;
+
     //
     // Returns total signal-to-noise for all frequency channels and time samples combined.
     // The signal-to-noise of a sampled pulse depends on 'sample_dt', the length of a sample in seconds.
@@ -119,6 +151,9 @@ protected:
 
     template<typename T>
     void _add_pulse_to_frequency_channel(T *out, double out_t0, double out_t1, int out_nt, int ifreq, double weight) const;    
+
+    template<typename T>
+    void _compare_in_frequency_channel(T *out_wsd, T *out_wss, const T *in_d, const T *in_w, double in_t0, double in_t1, int in_nt, int ifreq) const;
 };
 
 
