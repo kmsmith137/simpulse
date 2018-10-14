@@ -31,6 +31,7 @@ public:
     const double freq_hi_MHz;       // upper limit of frequency band
     const double dm;                // dispersion measure in its standard units (pc cm^{-3})
     const double sm;                // we define the "scattering measure" SM to be scattering time in milliseconds at 1 GHz
+    const double scatter_index;
     const double intrinsic_width;   // frequency-independent Gaussian width in seconds
 
     // These parameters can be changed after construction.
@@ -51,7 +52,7 @@ public:
     //   undispersed_arrival_time = arrival time of pulse as freq->infty, in seconds relative to an arbitrary origin
     //
     single_pulse(int pulse_nt, int nfreq, double freq_lo_MHz, double freq_hi_MHz, 
-		 double dm, double sm, double intrinsic_width, double fluence, 
+		 double dm, double sm, double scatter_index, double intrinsic_width, double fluence, 
 		 double spectral_index, double undispersed_arrival_time);
 
     void set_fluence(double fluence);

@@ -22,15 +22,18 @@ static void wrap_inlines(py::module &m)
 	  "   - The dispersion measure (in its usual units, pc cm^{-3}).\n\n"
 	  "   - The frequency (in MHz).");
 
-    m.def("scattering_time", &scattering_time, "sm"_a, "freq_MHz"_a,
-	  "scattering_time(sm, freq_MHz) -> float\n"
+    m.def("scattering_time", &scattering_time, "sm"_a, "freq_MHz"_a, "scatter_index"_a,
+	  "scattering_time(sm, freq_MHz, scatter_index) -> float\n"
 	  "\n"
 	  "Returns the scattering timescale in seconds (not milliseconds!), given\n"
 	  "\n"
 	  "   - The scattering measure 'sm', which we define to be the scattering time\n"
 	  "     in milliseconds (not seconds!) at 1 GHz.\n"
 	  "\n"
-	  "   - The frequency (in MHz).");
+	  "   - The frequency (in MHz).\n"
+	  "\n"
+	  " - The scattering measure 'sm', which we define to be the scattering time\n"
+	  "    in milliseconds (not seconds!) at 1 GHz.\n");
 }
 
 

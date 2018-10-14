@@ -72,6 +72,7 @@ void wrap_single_pulse(py::module &m)
 	"    freq_hi_MHz = highest frequency in band (MHz)\n\n"
 	"    dm = dispersion measure in its standard units (pc cm^{-3}).\n\n"
 	"    sm = scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz.\n\n"
+	"    scatter_index = scattering index, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz.\n\n"
 	"    intrinsic_width = frequency-independent Gaussian width in seconds (not milliseconds).\n\n"
 	"    fluence = integrated flux (i.e. units are flux-time) at central frequency of band\n\n"
 	"    spectral_index = parametrizes power-law frequency dependence of fluence of the form nu^alpha, where alpha is the spectral index\n\n"
@@ -148,8 +149,8 @@ void wrap_single_pulse(py::module &m)
 
 
     py::class_<single_pulse>(m, "single_pulse", doc)
-	.def(py::init<int,int,double,double,double,double,double,double,double,double>(),
-	     "nt"_a, "nfreq"_a, "freq_lo_MHz"_a, "freq_hi_MHz"_a, "dm"_a, "sm"_a, 
+	.def(py::init<int,int,double,double,double,double,double,double,double,double,double>(),
+	     "nt"_a, "nfreq"_a, "freq_lo_MHz"_a, "freq_hi_MHz"_a, "dm"_a, "sm"_a, "scatter_index"_a,
 	     "intrinsic_width"_a, "fluence"_a, "spectral_index"_a, "undispersed_arrival_time"_a)
 
 
@@ -170,6 +171,9 @@ void wrap_single_pulse(py::module &m)
 
 	.def_readonly("sm", &single_pulse::sm, 
 		      "Scattering measure, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz")
+	
+	.def_readonly("scatter_index", &single_pulse::scatter_index, 
+		      "Scattering index, which we define to be scattering time in milliseconds (not seconds!) at 1 GHz")
 
 	.def_readonly("intrinsic_width", &single_pulse::intrinsic_width, 
 		      "Frequency-independent Gaussian width in seconds (not milliseconds)")

@@ -1,6 +1,6 @@
 #include "../include/simpulse.hpp"
 #include "../include/simpulse/internals.hpp"
-
+#include <fstream>
 using namespace std;
 
 
@@ -11,10 +11,10 @@ namespace simpulse {
 
 
 single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, double freq_hi_MHz_, 
-			   double dm_, double sm_, double intrinsic_width_, double fluence_, 
+			   double dm_, double sm_, double scatter_index_, double intrinsic_width_, double fluence_, 
 			   double spectral_index_, double undispersed_arrival_time_)
     : pulse_nt(pulse_nt_), nfreq(nfreq_), freq_lo_MHz(freq_lo_MHz_), freq_hi_MHz(freq_hi_MHz_), 
-      dm(dm_), sm(sm_), intrinsic_width(intrinsic_width_), fluence(fluence_), 
+      dm(dm_), sm(sm_), scatter_index(scatter_index_), intrinsic_width(intrinsic_width_), fluence(fluence_), 
       spectral_index(spectral_index_), undispersed_arrival_time(undispersed_arrival_time_)
 {
     sp_assert(pulse_nt >= 64);   // using fewer time samples than this is probably a mistake
@@ -26,6 +26,7 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
     sp_assert(sm >= 0.0);
     sp_assert(intrinsic_width >= 0.0);
     sp_assert(fluence >= 0.0);
+    sp_assert(scatter_index <= 0.0);
 
     // Implementing delta function pulses wouldn't be a big deal, but creates corner cases
     // and so far I haven't seen a strong reason to implement it.
@@ -34,7 +35,10 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 
     this->pulse_t0.resize(nfreq, 0.0);
     this->pulse_t1.resize(nfreq, 0.0);
+    std::ifstream is;
     this->pulse_freq_wt.resize(nfreq, 0.0);
+
+
     this->pulse_cumsum.resize(nfreq * (pulse_nt+1), 0.0);
 
     this->_compute_freq_wt();
@@ -57,7 +61,7 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 	double dm_delay0 = dispersion_delay(dm, nu_hi);
 	double dm_delay1 = dispersion_delay(dm, nu_lo);
 	double dm_width = dm_delay1 - dm_delay0;
-	double tscatt = scattering_time(sm, nu_c);
+	double tscatt = scattering_time(sm, nu_c, scatter_index);
 
 	double t0 = dm_delay0 - 0.1*dm_width - 4.*intrinsic_width - tscatt;
 	double t1 = dm_delay1 + 0.1*dm_width + 4.*intrinsic_width + 10.*tscatt;
@@ -115,15 +119,19 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 
 void single_pulse::_compute_freq_wt()
 {
-    if ((spectral_index < -20.1) || (spectral_index > 20.1))
-	throw runtime_error("single_pulse::spectral_index set to 'extreme' value " + xto_string(spectral_index) + ", this is currently disallowed");
 
-    double nu0 = (freq_lo_MHz + freq_hi_MHz) / 2.0;
+    std::ifstream is;
 
-    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
-	double nu = freq_lo_MHz + (ifreq+0.5) * (freq_hi_MHz - freq_lo_MHz) / (double)nfreq;
-	this->pulse_freq_wt[ifreq] = pow(nu/nu0, spectral_index);
-    }
+   is.open("arr.bin", std::ios::binary);
+   is.seekg(0, std::ios::end);
+   size_t filesize=is.tellg();
+   is.seekg(0, std::ios::beg);
+
+   this->pulse_freq_wt.resize(filesize/sizeof(double));
+
+   is.read((char *)this->pulse_freq_wt.data(), filesize);
+
+   
 }
 
 
@@ -192,7 +200,7 @@ void single_pulse::_add_pulse_to_frequency_channel(T *out, double out_t0, double
 	return;
     
     double out_dt = (out_t1 - out_t0) / out_nt;
-    double w = weight * fluence * pulse_freq_wt[ifreq] / out_dt;
+    double w = weight * pulse_freq_wt[ifreq] / out_dt;
     const double *cs = &pulse_cumsum[ifreq*(pulse_nt+1)];
 
     for (int it = 0; it < out_nt; it++) {
@@ -223,7 +231,7 @@ void single_pulse::_compare_in_frequency_channel(T *out_wsd, T *out_wss, const T
 	return;
     
     double in_dt = (in_t1 - in_t0) / in_nt;
-    double w = fluence * pulse_freq_wt[ifreq] / in_dt;
+    double w =  pulse_freq_wt[ifreq] / in_dt;
     const double *cs = &pulse_cumsum[ifreq*(pulse_nt+1)];
 
     double wsd = 0.0;
