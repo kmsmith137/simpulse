@@ -101,7 +101,7 @@ strided_2d_array::strided_2d_array(py::array &arr_, int expected_nfreq, bool is_
     // The "c" prefix means "in multiples of 'itemsize', not sizeof(char)".
     this->coffset = 0;
     this->cstride = stride[0] / itemsize;
-    this->nt = shape[0];
+    this->nt = shape[1];
 
     if (freq_hi_to_lo) {
 	this->coffset = cstride * (expected_nfreq-1);
