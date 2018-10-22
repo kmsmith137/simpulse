@@ -111,8 +111,7 @@ cdef class single_pulse:
         self.p.get_endpoints(t0, t1)
         return (t0, t1)
 
-
-    def add_to_timestream(self, np.ndarray out not None, out_t0, out_t1, freq_hi_to_lo=False):
+    def add_to_timestream(self, np.ndarray out not None, out_t0, out_t1, weight=1., freq_hi_to_lo=False):
         """
         This routine adds the pulse to a "block" of (frequency, time) samples.
         It is sometimes called incrementally, as a stream of blocks generated.
@@ -138,18 +137,19 @@ cdef class single_pulse:
         stride = -(out.strides[0]//out.itemsize) if freq_hi_to_lo else (out.strides[0]//out.itemsize)
 
         if out.dtype == np.float32:
-            self._add_to_timestream_float(out, out_t0, out_t1, offset, stride)
+            self._add_to_timestream_float(out, out_t0, out_t1, offset, stride, weight)
         elif out.dtype == np.float64:
-            self._add_to_timestream_double(out, out_t0, out_t1, offset, stride)
+            self._add_to_timestream_double(out, out_t0, out_t1, offset, stride, weight)
         else:
             raise RuntimeError('single_pulse.add_to_timestream(): array has wrong type (expected float32 or float64)')
 
 
-    def _add_to_timestream_float(self, np.ndarray[float,ndim=2] out not None, out_t0, out_t1, int offset, stride):
-        return simpulse_pxd._add_to_timestream_float(self.p, (<float *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
+    def _add_to_timestream_float(self, np.ndarray[float,ndim=2] out not None, out_t0, out_t1, int offset, stride, weight):
+        return simpulse_pxd._add_to_timestream_float(self.p, (<float *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride, weight)
 
-    def _add_to_timestream_double(self, np.ndarray[double,ndim=2] out not None, out_t0, out_t1, int offset, stride):
-        return simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride)
+    def _add_to_timestream_double(self, np.ndarray[double,ndim=2] out not None, out_t0, out_t1, int offset, stride, weight):
+        return simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride, weight)
+
 
 
     def get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0):

@@ -32,6 +32,6 @@ cdef extern from "simpulse_cython.hpp" namespace "simpulse":
     double _get_signal_to_noise_scalar(single_pulse *sp, double sample_dt, double sample_rms, double sample_t0) except +
     double _get_signal_to_noise_vector(single_pulse *sp, double sample_dt, const double *sample_rms, const double *channel_weights, double sample_t0) except +
 
-    void _add_to_timestream_float(single_pulse *sp, float *out, double out_t0, double out_t1, int out_nt, int stride) except +
-    void _add_to_timestream_double(single_pulse *sp, double *out, double out_t0, double out_t1, int out_nt, int stride) except +
+    void _add_to_timestream_float(single_pulse *sp, float *out, double out_t0, double out_t1, int out_nt, int stride, double weight) except +
+    void _add_to_timestream_double(single_pulse *sp, double *out, double out_t0, double out_t1, int out_nt, int stride, double weight) except +
 
