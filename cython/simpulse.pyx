@@ -151,6 +151,37 @@ cdef class single_pulse:
         return simpulse_pxd._add_to_timestream_double(self.p, (<double *> &out[0,0]) + offset, out_t0, out_t1, out.shape[1], stride, weight)
 
 
+    def get_n_sparse(self, t0, t1, nt):
+        return self.p.get_n_sparse(t0, t1, nt)
+
+    def add_to_timestream_sparse(self, np.ndarray out not None, np.ndarray[int,ndim=1] out_i0 not None, np.ndarray[int,ndim=1] out_n not None, out_t0, out_t1, out_nt, weight):
+        """
+        This routine adds the pulse to a sparse representation of (frequency,time) samples.
+
+        The 'out' arg should be a 1d array with length at least 'get_n_sparse()'.
+
+        The 'out_i0' and 'out_n' arrays should have length 'nfreq', and will contain the sample offsets and number of samples
+        in each frequency channel.
+
+	By default, the frequencies are assumed ordered from lowest to highest.
+    	WARNING: this ordering is used throughout 'simpulse', but the opposite ordering is used in rf_pipelines and bonsai!!
+        """
+        if (out.ndim != 1):
+            raise RuntimeError('single_pulse.add_to_timestream_sparse(): out array is not 1-d')
+        if out.dtype == np.float32:
+            self._add_to_timestream_sparse_float(out, out_i0, out_n, out_t0, out_t1, out_nt, weight)
+        elif out.dtype == np.float64:
+            self._add_to_timestream_sparse_double(out, out_i0, out_n, out_t0, out_t1, out_nt, weight)
+        else:
+            raise RuntimeError('single_pulse.add_to_timestream_sparse(): array has wrong type (expected float32 or float64)')
+
+    def _add_to_timestream_sparse_float(self, np.ndarray[float,ndim=1] out not None, np.ndarray[int,ndim=1] out_i0 not None, np.ndarray[int,ndim=1] out_n not None, out_t0, out_t1, int out_nt, double weight):
+        return simpulse_pxd._add_to_timestream_sparse_float(self.p, <float *>&out[0], <int *> &out_i0[0], <int *> &out_n[0], out_t0, out_t1, out_nt, weight)
+
+    def _add_to_timestream_sparse_double(self, np.ndarray[double,ndim=1] out not None, np.ndarray[int,ndim=1] out_i0 not None, np.ndarray[int,ndim=1] out_n not None, out_t0, out_t1, int out_nt, double weight):
+        return simpulse_pxd._add_to_timestream_sparse_double(self.p, <double *>&out[0], <int *> &out_i0[0], <int *> &out_n[0], out_t0, out_t1, out_nt, weight)
+
+
 
     def get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0):
         """

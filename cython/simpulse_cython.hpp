@@ -25,4 +25,15 @@ inline void _add_to_timestream_double(simpulse::single_pulse *sp, double *out, d
     sp->add_to_timestream(out, out_t0, out_t1, out_nt, stride, weight);
 }
 
+inline void _add_to_timestream_sparse_float(simpulse::single_pulse *sp, float *out, int *out_i0, int *out_n, double out_t0, double out_t1, int out_nt, double weight)
+{
+    sp->add_to_timestream_sparse(out, out_i0, out_n, out_t0, out_t1, out_nt, weight);
+}
+
+inline void _add_to_timestream_sparse_double(simpulse::single_pulse *sp, double *out, int *out_i0, int *out_n, double out_t0, double out_t1, int out_nt, double weight)
+{
+    sp->add_to_timestream_sparse(out, out_i0, out_n, out_t0, out_t1, out_nt, weight);
+}
+
+
 }  // namespace simpulse

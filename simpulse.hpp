@@ -111,6 +111,11 @@ struct single_pulse {
     // (and taking 'out' to point to the last row of the array rather than the first row)
     //
     template<typename T> void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0, double weight=1.) const;
+
+    int get_n_sparse(double out_t0, double out_t1, int out_nt) const;
+    
+    template<typename T> void add_to_timestream_sparse(T *out, int *out_i0, int *out_n,
+                                                       double out_t0, double out_t1, int out_nt, double weight=1.) const;
     
     //
     // Returns total signal-to-noise for all frequency channels and time samples combined.
