@@ -112,8 +112,25 @@ struct single_pulse {
     //
     template<typename T> void add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride=0, double weight=1.) const;
 
+    // Returns the total number of samples required to represent this
+    // pulse in sparse form.  The result of this function should be
+    // used to initialize the "T *out" array that will be passed to
+    // add_to_timestream_sparse().
     int get_n_sparse(double out_t0, double out_t1, int out_nt) const;
-    
+
+    // Produces a sparse representation of this pulse.
+    // - T *out: must have size at least get_n_sparse().  The samples for all
+    //       frequencies will be packed into this array in order.
+    // - int *out_i0: must be an array with *nfreq* elements.  The samples for
+    //       frequency *i* start at time index *out_i0[i]* in the dense sample array.
+    // - int *out_n: must be an array with *nfreq* elements.  The number of samples
+    //       for frequency *i*.  Samples for freq *i* go from *out_i0[i]* to *out_i0[i] + out_n[i]*.
+    // - double out_t0, double out_t1 are the start and stop times (in seconds) of the dense output array.
+    // - int out_nt is the number of samples in the dense output array (so sample period is *dt = (out_t1 - out_t0)/out_nt*)
+    // - double weight: is a scaling factor for the amplitude of the pulse.
+    // Note that to find the start of frequency *i* in the *out* sample array, one must
+    // compute the cumulative sum of the *out_n* up to index *i-1*.
+    // Note: By default, the frequencies are assumed ordered from lowest to highest.
     template<typename T> void add_to_timestream_sparse(T *out, int *out_i0, int *out_n,
                                                        double out_t0, double out_t1, int out_nt, double weight=1.) const;
     

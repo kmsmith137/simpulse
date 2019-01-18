@@ -201,7 +201,6 @@ inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, doub
     }
 }
 
-
 template<typename T>
 void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const
 {
@@ -266,18 +265,12 @@ inline void _add_pulse_to_frequency_channel_sparse(const single_pulse &sp, T *ou
     simpulse_assert(ifreq >= 0 && ifreq < sp.nfreq);
 
     double out_dt = (out_t1 - out_t0) / out_nt;
-
-    //cout << "add sparse: t " << out_t0 << " to " << out_t1 << ", nt " << out_nt << endl;
-    
     _get_pulse_n_samples(sp, sparse_i0, sparse_n, out_t0, out_t1, out_nt, ifreq);
     if (*sparse_n == 0)
         return;
 
     double ot0 = out_t0 +  *sparse_i0              * out_dt;
     double ot1 = out_t0 + (*sparse_i0 + *sparse_n) * out_dt;
-
-    //cout << "adding sparse: channel " << ifreq << ": t " << ot0 << " to " << ot1 << ", nt " << *sparse_n << endl;
-    
     _add_pulse_to_frequency_channel(sp, out, ot0, ot1, *sparse_n, ifreq, weight);
 }
 
@@ -318,7 +311,6 @@ int single_pulse::get_n_sparse(double out_t0, double out_t1, int out_nt) const {
 	return 0;
     if (out_t1 < undispersed_arrival_time + min_t0)
 	return 0;
-
     int ntotal = 0;
     for (int ifreq = 0; ifreq < nfreq; ifreq++) {
         int i0;

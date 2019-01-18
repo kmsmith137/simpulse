@@ -152,6 +152,13 @@ cdef class single_pulse:
 
 
     def get_n_sparse(self, t0, t1, nt):
+
+        """
+        Returns the total number of samples required to store a sparse representation
+        of this pulse, in a block of samples starting at *t0*, ending at *t1*, and
+        with *nt* samples.
+        """
+
         return self.p.get_n_sparse(t0, t1, nt)
 
     def add_to_timestream_sparse(self, np.ndarray out not None, np.ndarray[int,ndim=1] out_i0 not None, np.ndarray[int,ndim=1] out_n not None, out_t0, out_t1, out_nt, weight):
