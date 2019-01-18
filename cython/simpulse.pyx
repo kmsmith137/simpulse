@@ -188,7 +188,18 @@ cdef class single_pulse:
     def _add_to_timestream_sparse_double(self, np.ndarray[double,ndim=1] out not None, np.ndarray[int,ndim=1] out_i0 not None, np.ndarray[int,ndim=1] out_n not None, out_t0, out_t1, int out_nt, double weight):
         return simpulse_pxd._add_to_timestream_sparse_double(self.p, <double *>&out[0], <int *> &out_i0[0], <int *> &out_n[0], out_t0, out_t1, out_nt, weight)
 
-
+    def get_sparse(self, out_t0, out_t1, out_nt, weight=1.):
+        """
+        Returns a sparse representation of this pulse:
+        (t0, n, data)
+        where *t0* and *n* are integer arrays of length *nfreq*, containing the sample offset and length of the data to be added to the time stream for each frequency, and *data* is a float32 array of length *sum(n)* containing all the data.
+        """
+        nsparse = self.get_n_sparse(out_t0, out_t1, out_nt)
+        sparse_data = np.zeros(nsparse, np.float32)
+        sparse_i0 = np.zeros(self.nfreq, np.int32)
+        sparse_n = np.zeros(self.nfreq, np.int32)
+        self.add_to_timestream_sparse(sparse_data, sparse_i0, sparse_n, out_t0, out_t1, out_nt, weight)
+        return (sparse_i0, sparse_n, sparse_data)
 
     def get_signal_to_noise(self, sample_dt, sample_rms=1.0, channel_weights=None, sample_t0=0.0):
         """
