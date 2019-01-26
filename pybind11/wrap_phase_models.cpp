@@ -207,7 +207,40 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	"    nx, ny = unit vector in the direction of Earth\n\n"
 	"    P = pulse period\n\n"
 	"    t0 = time delay parameter between Earth and binary center of mass (mod Porb)\n\n"
-	"    phi0 = initial phase (mod 1)";
+	"    phi0 = initial phase (mod 1)\n"
+	"\n"
+	"WARNING: keplerian_binary_phase_models are pickelable, but *only* if you\n"
+	"use the cPickle (not pickle) module, and specify pickle protocol version 2, e.g.::\n"
+	"\n"
+	"    x = simpulse.keplerian_binary_phase_model(...)\n"
+	"    s = cPickle.dumps(x, 2)    # note protocol version 2 here!\n"
+	"    print cPickle.loads(x)\n"
+	"\n"
+	"Variants of this will result in either exceptions or mystery segfaults!!\n";
+    
+
+    auto __getstate__ = [](const keplerian_binary_phase_model &p)
+    {
+	return py::make_tuple(p.e, p.a, p.Porb, p.nx, p.ny, p.P, p.t0, p.phi0);
+    };
+
+    auto __setstate__ = [](py::tuple t)
+    {
+	if (t.size() != 8)
+	    throw runtime_error("Internal error in simpule::keplerian_binary_phase_model::__setstate__(): len(t) != 8");
+
+	double e = t[0].cast<double> ();
+	double a = t[1].cast<double> ();
+	double Porb = t[2].cast<double> ();
+	double nx = t[3].cast<double> ();
+	double ny = t[4].cast<double> ();
+	double P = t[5].cast<double> ();
+	double t0 = t[6].cast<double> ();
+	double phi0 = t[7].cast<double> ();
+
+	return keplerian_binary_phase_model(e, a, Porb, nx, ny, P, t0, phi0);
+    };
+
 
     
     py::class_<keplerian_binary_phase_model, phase_model_base>(m, "keplerian_binary_phase_model", doc)
@@ -229,6 +262,8 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	.def_readonly("P", &keplerian_binary_phase_model::P, "Pulse period")
 	.def_readonly("t0", &keplerian_binary_phase_model::t0, "Time delay parameter between Earth and binary center of mass (mod Porb)")
 	.def_readonly("phi0", &keplerian_binary_phase_model::phi0, "Initial phase (mod 1)")
+
+	.def(py::pickle(__getstate__, __setstate__))
     ;
 }
 

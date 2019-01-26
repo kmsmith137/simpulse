@@ -20,6 +20,22 @@ def make_random_constant_acceleration_phase_model():
     return ret
 
 
+def make_random_keplerian_binary_phase_model():
+    e = np.random.uniform(0.0, 0.99)
+    Porb = 10**np.random.uniform(3.0, 6.0)
+    a = np.random.uniform(1.0e-4, 1.0e-3) * Porb
+    nx = np.random.uniform(-0.7, 0.7)
+    ny = np.random.uniform(-0.7, 0.7)
+    P = np.random.uniform(1.0e-2, 1.0)
+    t0 = np.random.uniform(0.0, Porb)
+    phi0 = np.random.uniform(0.0, 1.0)
+
+    ret = simpulse.keplerian_binary_phase_model(e, a, Porb, nx, ny, P, t0, phi0)
+    assert (ret.e, ret.a, ret.Porb, ret.nx, ret.ny, ret.P, ret.t0, ret.phi0) == (e, a, Porb, nx, ny, P, t0, phi0)
+
+    return ret
+
+
 def make_random_von_mises_profile():
     duty_cycle = np.random.uniform(0.01, 0.2)
     detrend = bool(np.random.randint(0,2))
@@ -85,9 +101,41 @@ def test_constant_acceleration_phase_model():
         phi4 = np.array([ pm2.eval_phi_sequence(t0,t1,nt,nderivs) for nderivs in xrange(0,4) ])
         
         assert isinstance(pm2, simpulse.constant_acceleration_phase_model)
-        assert np.max(np.abs(phi1-phi4)) < 1.0e10
+        assert np.max(np.abs(phi1-phi4)) < 1.0e-10
 
     print 'test_constant_acceleration_phase_model: done'
+
+
+####################################################################################################
+
+
+def test_keplerian_binary_phase_model():
+    print 'test_keplerian_binary_phase_model: start (currently a semi-placeholder)'
+
+    for iter in xrange(100):
+        pm = make_random_keplerian_binary_phase_model()
+        t0, t1, nt = make_random_time_sampling()
+        tvec = np.linspace(t0, t1, nt)
+
+        # phi1: eval_phi_sequence()
+        # phi2: eval_phi()
+        phi1 = np.array([ pm.eval_phi_sequence(t0,t1,nt,nderivs) for nderivs in xrange(0,3) ])
+        phi2 = np.array([ [ pm.eval_phi(t,nderivs) for t in tvec ] for nderivs in xrange(0,3) ])
+
+        # phi3: python reference evaluation
+        # FIXME forthcoming!
+
+        # Test pickling.  Note cPickle(..., 2) here!!  In current pybind11, anything else results in
+        # either an exception or a segfault.
+        
+        s = cPickle.dumps(pm, 2)
+        pm2 = cPickle.loads(s)
+        phi4 = np.array([ pm2.eval_phi_sequence(t0,t1,nt,nderivs) for nderivs in xrange(0,3) ])
+        
+        assert isinstance(pm2, simpulse.keplerian_binary_phase_model)
+        assert np.max(np.abs(phi1-phi4)) < 1.0e-10
+
+    print 'test_keplerian_binary_phase_model: done'
 
 
 ####################################################################################################
@@ -328,6 +376,7 @@ def test_snr_calculations():
 
 if __name__ == '__main__':
     test_constant_acceleration_phase_model()
+    test_keplerian_binary_phase_model()
     test_von_mises_profile_basics()
     test_eval_integrated_samples()
     test_profile_fft()
