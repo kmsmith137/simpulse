@@ -131,8 +131,34 @@ void wrap_constant_acceleration_phase_model(py::module &m)
 	"    phi0 = value of the phase at reference time 't0'\n\n"
 	"    f0 = value of the frequency f=dphi/dt at reference time 't0'\n\n"
 	"    fdot = frequency derivative df/dt (note that this is independent of time)\n\n"
-	"    t0 = a reference time (can be zero, but a nonzero value may be convenient)";
-    
+	"    t0 = a reference time (can be zero, but a nonzero value may be convenient)\n"
+	"\n"
+	"WARNING: constant_acceleration_phase_models are pickelable, but *only* if you\n"
+	"use the cPickle (not pickle) module, and specify pickle protocol version 2, e.g.::\n"
+	"\n"
+	"    x = simpulse.constant_acceleration_phase_model(...)\n"
+	"    s = cPickle.dumps(x, 2)    # note protocol version 2 here!\n"
+	"    print cPickle.loads(x)\n"
+	"\n"
+	"Variants of this will result in either exceptions or mystery segfaults!!\n";
+
+    auto __getstate__ = [](const constant_acceleration_phase_model &p)
+    {
+	return py::make_tuple(p.phi0, p.f0, p.fdot, p.t0);
+    };
+
+    auto __setstate__ = [](py::tuple t)
+    {
+	if (t.size() != 4)
+	    throw runtime_error("Internal error in simpule::constant_acceleration_phase_model::__setstate__(): len(t) != 4");
+
+	double phi0 = t[0].cast<double> ();
+	double f0 = t[1].cast<double> ();
+	double fdot = t[2].cast<double> ();
+	double t0 = t[3].cast<double> ();
+	
+	return constant_acceleration_phase_model(phi0, f0, fdot, t0);
+    };
 
     py::class_<constant_acceleration_phase_model, phase_model_base>(m, "constant_acceleration_phase_model", doc)
 	.def(py::init<double,double,double,double>(), "phi0"_a, "f0"_a, "fdot"_a, "t0"_a)
@@ -148,6 +174,8 @@ void wrap_constant_acceleration_phase_model(py::module &m)
 
 	.def_readonly("t0", &constant_acceleration_phase_model::t0,
 		      "Reference time where 'phi0' and 'f0' are defined (same as constructor argument with same name)")
+
+	.def(py::pickle(__getstate__, __setstate__))
     ;
 }
 
@@ -165,12 +193,12 @@ void wrap_keplerian_binary_phase_model(py::module &m)
     // to update the web-published version, you need to do 'git push' in the simpulse_docs repo.)
 
     const char *doc =
-	"This class represents a binary pulsar with relativistic effects neglected\n"
+	"This class represents a binary pulsar with relativistic effects neglected.\n"
 	"(Subclass of phase_model_base.)\n"
 	"\n"
 	"Constructor syntax::\n"
 	"\n"
-	"    pm = simpulse.keplerian_binary_phase_model(e, a, b, Prob, nx, ny, P, t0, phi0)\n"
+	"    pm = simpulse.keplerian_binary_phase_model(e, a, b, Porb, nx, ny, P, t0, phi0)\n"
 	"\n"
 	"where:\n\n"
 	"    e = eccentricity\n\n"
@@ -181,8 +209,8 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	"    P = pulse period\n\n"
 	"    t0 = time delay parameter between Earth and binary center of mass (mod Porb)\n\n"
 	"    phi0 = initial phase (mod 1)";
-    
 
+    
     py::class_<keplerian_binary_phase_model, phase_model_base>(m, "keplerian_binary_phase_model", doc)
 	// The following boilerplate exports the C++ constructor to python.
 	// Note that you need to declare the constructor argument types explicitly (double, double, ...)

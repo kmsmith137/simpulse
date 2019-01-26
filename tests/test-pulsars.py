@@ -3,6 +3,7 @@
 import sys
 import simpulse
 import numpy as np
+import cPickle
 
 
 def make_random_constant_acceleration_phase_model():
@@ -75,6 +76,16 @@ def test_constant_acceleration_phase_model():
 
         assert np.max(np.abs(phi1-phi2)) < 1.0e-10   # consistency of eval_phi_sequence() and eval_phi()
         assert np.max(np.abs(phi1-phi3)) < 1.0e-10   # consistency of C++ and python reference evaluation
+
+        # Test pickling.  Note cPickle(..., 2) here!!  In current pybind11, anything else results in
+        # either an exception or a segfault.
+        
+        s = cPickle.dumps(pm, 2)
+        pm2 = cPickle.loads(s)
+        phi4 = np.array([ pm2.eval_phi_sequence(t0,t1,nt,nderivs) for nderivs in xrange(0,4) ])
+        
+        assert isinstance(pm2, simpulse.constant_acceleration_phase_model)
+        assert np.max(np.abs(phi1-phi4)) < 1.0e10
 
     print 'test_constant_acceleration_phase_model: done'
 
