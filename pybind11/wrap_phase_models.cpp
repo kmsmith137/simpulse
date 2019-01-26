@@ -198,12 +198,11 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	"\n"
 	"Constructor syntax::\n"
 	"\n"
-	"    pm = simpulse.keplerian_binary_phase_model(e, a, b, Porb, nx, ny, P, t0, phi0)\n"
+	"    pm = simpulse.keplerian_binary_phase_model(e, a, Porb, nx, ny, P, t0, phi0)\n"
 	"\n"
 	"where:\n\n"
 	"    e = eccentricity\n\n"
 	"    a = semimajor axis\n\n"
-	"    b = semiminor axis (note: e = sqrt(1 - b^2 / a^2) )\n\n"
 	"    Porb = orbital period\n\n"
 	"    nx, ny = unit vector in the direction of Earth\n\n"
 	"    P = pulse period\n\n"
@@ -217,8 +216,8 @@ void wrap_keplerian_binary_phase_model(py::module &m)
 	// and provide names for the arguments.  
 	// Warning: if something is wrong here (for example, if the number of arguments doesn't match the 
 	// C++ constructor) you'll get an incomprehensible compiler error!)
-	.def(py::init<double,double,double,double,double,double,double,double,double>(), 
-	     "e"_a, "a"_a, "b"_a, "Porb"_a, "nx"_a, "ny"_a, "P"_a, "t0"_a, "phi0"_a)
+	.def(py::init<double,double,double,double,double,double,double,double>(), 
+	     "e"_a, "a"_a, "Porb"_a, "nx"_a, "ny"_a, "P"_a, "t0"_a, "phi0"_a)
 
 	// Make const public members visible from python.  (The last argument is the docstring.)
 	.def_readonly("e", &keplerian_binary_phase_model::e, "Eccentricity")

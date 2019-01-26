@@ -11,12 +11,11 @@ namespace simpulse {
 #endif
 
 
-keplerian_binary_phase_model::keplerian_binary_phase_model(double e_, double a_, double b_, double Porb_, double nx_, double ny_, double P_, double t0_, double phi0_)
-    : e(e_), a(a_), b(b_), Porb(Porb_), nx(nx_), ny(ny_), P(P_), t0(t0_), phi0(phi0_)
+keplerian_binary_phase_model::keplerian_binary_phase_model(double e_, double a_, double Porb_, double nx_, double ny_, double P_, double t0_, double phi0_)
+    : e(e_), a(a_), b(xsqrt(a*a*(1-e*e))), Porb(Porb_), nx(nx_), ny(ny_), P(P_), t0(t0_), phi0(phi0_)
 {
-    sp_assert2(e < 1, "simpulse::keplerian_binary_phase_model: e must be in [0, 1)");
+    sp_assert2((e >= 0) && (e < 1), "simpulse::keplerian_binary_phase_model: e must be in [0, 1)");
     sp_assert2(sqrt(nx * nx + ny * ny) <= 1, "simpulse::keplerian_binary_phase_model: nx and ny must be components of a unit vector");
-    sp_assert2(b == sqrt(a * a * (1 - e * e)), "simpulse::keplerian_binary_phase_model: e, a, and b are related by e = sqrt(1 - b^2 / a^2)");
     sp_assert2(max(a, b) < Porb / 10, "simpulse::keplerian_binary_phase_model: a and b must be much smaller than Porb");
 }
 

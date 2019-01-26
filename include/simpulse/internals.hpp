@@ -69,6 +69,11 @@ inline double bessj0(double x)
     return (x*x > 1.0e-100) ? (sin(x)/x) : 1.0;
 }
 
+inline double xsqrt(double x)
+{
+    return sqrt(std::max(x,0.0));
+}
+
 // According to C++ spec, the sign of (m % n) is implementation-defined if either operand is negative
 // This version guarantees (0 <= (m%n) < n) in the case where m is negative (but still assumes n positive)
 static inline ssize_t xmod(ssize_t m, ssize_t n)
