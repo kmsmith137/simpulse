@@ -12,10 +12,18 @@ PYDIR=$(HOME)/lib/python2.7/site-packages
 
 # Read-only location of python header files, needed for cython
 # Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc()
-PYTHON_INCDIR=/usr/include/python2.7
+# PYTHON_INCDIR=/usr/include/python2.7
+PYTHON_INCDIR=/usr/local/Cellar/python@2/2.7.15_1/Frameworks/Python.framework/Versions/2.7/include/python2.7
+
+# Location of libpython2.7
+# There's no way to get this from the python interpreter automatically, but I found it by starting in PYTHON_INCDIR 
+# and looking around (find | grep libpython is helpful)
+# WARNING: make sure this is in your $LD_LIBRARY_PATH too!
+PYTHON_LIBDIR=/usr/local/Cellar/python@2/2.7.15_1/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
-NUMPY_INCDIR=/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include
+# NUMPY_INCDIR=/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include
+NUMPY_INCDIR=/Users/kmsmith/Library/Python/2.7/lib/python/site-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
@@ -24,7 +32,7 @@ CPP=clang -std=c++11 -Wall -O3 -march=native -ffast-math -funroll-loops -I. -I$(
 # Extra linker flags when creating a shared library or exectutable from .o files
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # Don't forget -fPIC
-CPP_LFLAGS=-fPIC -L. -L$(LIBDIR) -lc++
+CPP_LFLAGS=-fPIC -L. -L$(LIBDIR) -L$(PYTHON_LIBDIR) -lc++
 
-# osx python modules must be linked with -lPython
-LIBS_PYMODULE=-lPython
+# osx python modules must be linked with -lpython2.7
+LIBS_PYMODULE=-lpython2.7
