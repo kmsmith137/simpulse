@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../include/simpulse/inlines.hpp"
 #include "../include/simpulse/pulsar_phase_models.hpp"
 #include "../include/simpulse/pulsar_profiles.hpp"
 #include "../include/simpulse/internals.hpp"
@@ -107,9 +108,11 @@ von_mises_profile::von_mises_profile(double duty_cycle_, bool detrend_, int min_
 
     vector<complex<double>> ctmp(internal_nphi2, 0.0);
 
+    unique_lock<mutex> ulock(fftw_global_planning_lock);
     fftw_plan plan = fftw_plan_dft_r2c_1d(internal_nphi, rho, reinterpret_cast<fftw_complex *> (&ctmp[0]), FFTW_ESTIMATE);
     fftw_execute(plan);
     fftw_destroy_plan(plan);
+    ulock.unlock();
 
     for (int iphi = 0; iphi < internal_nphi2; iphi++)
 	profile_fft[iphi] = ctmp[iphi].real() / internal_nphi;

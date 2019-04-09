@@ -10,6 +10,13 @@ namespace simpulse {
 #endif
 
 
+// Putting the global_planning_lock in this source file is arbitrary, but I didn't want
+// to create a new source file just to declare it!  Eventually the global planning lock
+// will be phased out in favor of FFTW's lock anyway (see discussion in simpulse/inlines.hpp).
+
+std::mutex fftw_global_planning_lock;
+
+
 single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, double freq_hi_MHz_, 
 			   double dm_, double sm_, double intrinsic_width_, double fluence_, 
 			   double spectral_index_, double undispersed_arrival_time_)
@@ -44,7 +51,10 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 
     double *bufr = checked_fftw_malloc<double> (nfft);
     complex<double> *bufc = checked_fftw_malloc<complex<double> > (nfft2);
+
+    unique_lock<mutex> ulock(fftw_global_planning_lock);
     fftw_plan plan = fftw_plan_dft_c2r_1d(nfft, reinterpret_cast<fftw_complex *> (bufc), bufr, FFTW_ESTIMATE);
+    ulock.unlock();
 
     // The following loop synthesizes the pulse.
     // We sample the pulse at time t_i = t0 + (i+0.5)*(t1-t0)/pulse_nt, where 0 <= i < pulse_nt.
@@ -97,7 +107,10 @@ single_pulse::single_pulse(int pulse_nt_, int nfreq_, double freq_lo_MHz_, doubl
 
     fftw_free(bufr);
     fftw_free(bufc);
+
+    ulock.lock();
     fftw_destroy_plan(plan);
+    ulock.unlock();
 
     // Initialize min_t0, max_t1, max_dt
 
