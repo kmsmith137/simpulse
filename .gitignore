@@ -5,3 +5,5 @@ cython/simpulse.cpp
 visual_check/plot*.png
 *.o
 *~
+*.swp
+test_pulse.npy
