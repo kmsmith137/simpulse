@@ -72,6 +72,33 @@ struct constant_acceleration_phase_model : public phase_model_base
     virtual double eval_phi(double t, int nderivs) const override;
     virtual std::string str() const override;
 };
+
+struct sinusoidal_phase_model : public phase_model_base 
+{
+    // Constructor arguments:
+    // 
+    // pulse_phase = phase phi(t0) at the reference time t0
+    // pulse_freq = average pulse frequency phi'(t)
+    // orbital_phase = orbital phase at the reference time t0
+    //                 (0 = maximum pulse frequency, 0.5 = minimum pulse frequency)
+    // orbital_freq = orbital frequency
+    // beta = max fractional deviation of the pulse frequency from
+    //  average (i.e. beta=0.01 means that the instantaneous frequency
+    //  be between 99% and 101% of the average)
+    // t0
+
+    sinusoidal_phase_model(double pulse_phase, double pulse_freq, double orbital_phase, double orbital_freq, double beta, double t0);
+
+    const double pulse_phase;
+    const double pulse_freq;
+    const double orbital_phase;
+    const double orbital_freq;
+    const double beta;
+    const double t0;
+
+    virtual double eval_phi(double t, int nderivs) const override;
+    virtual std::string str() const override;
+};
     
 
 // keplerian_binary_phase_model

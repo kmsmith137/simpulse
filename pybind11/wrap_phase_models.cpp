@@ -179,6 +179,53 @@ void wrap_constant_acceleration_phase_model(py::module &m)
     ;
 }
 
+void wrap_sinusoidal_phase_model(py::module &m)
+{
+    py::options options;
+    options.disable_function_signatures();
+
+    const char *doc =
+	"This is a docstring!!\n";
+
+    auto __getstate__ = [](const sinusoidal_phase_model &p)
+    {
+        return py::make_tuple(p.pulse_phase, p.pulse_freq, p.orbital_phase, p.orbital_freq, p.beta, p.t0);
+    };
+
+    auto __setstate__ = [](py::tuple t)
+    {
+	if (t.size() != 6)
+	    throw runtime_error("Internal error in simpule::sinusoidal_phase_model::__setstate__(): len(t) != 6");
+
+	double pulse_phase = t[0].cast<double> ();
+	double pulse_freq = t[1].cast<double> ();
+	double orbital_phase = t[2].cast<double> ();
+	double orbital_freq = t[3].cast<double> ();
+	double beta = t[4].cast<double> ();
+	double t0 = t[5].cast<double> ();
+	
+	return sinusoidal_phase_model(pulse_phase, pulse_freq, orbital_phase, orbital_freq, beta, t0);
+    };
+
+    py::class_<sinusoidal_phase_model, phase_model_base>(m, "sinusoidal_phase_model", doc)
+      .def(py::init<double,double,double,double,double,double>(), "pulse_phase"_a, "pulse_freq"_a, "orbital_phase"_a, "orbital_freq"_a, "beta"_a, "t0"_a)
+
+	.def_readonly("pulse_phase", &sinusoidal_phase_model::pulse_phase, 
+		      "pulse_phase")
+	.def_readonly("pulse_freq", &sinusoidal_phase_model::pulse_freq, 
+		      "pulse_freq")
+	.def_readonly("orbital_phase", &sinusoidal_phase_model::orbital_phase, 
+		      "orbital_phase")
+	.def_readonly("orbital_freq", &sinusoidal_phase_model::orbital_freq, 
+		      "orbital_freq")
+	.def_readonly("beta", &sinusoidal_phase_model::beta, 
+		      "beta")
+	.def_readonly("t0", &sinusoidal_phase_model::t0, 
+		      "t0")
+	.def(py::pickle(__getstate__, __setstate__))
+    ;
+}
+
 
 void wrap_keplerian_binary_phase_model(py::module &m)
 {

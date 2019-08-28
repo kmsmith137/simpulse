@@ -1,6 +1,7 @@
 add_library(simpulse SHARED
   constant_acceleration_phase_model.cpp
   keplerian_binary_phase_model.cpp
+  sinusoidal_phase_model.cpp
   phase_model_base.cpp
   single_pulse.cpp
   von_mises_profile.cpp
