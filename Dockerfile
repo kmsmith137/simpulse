@@ -18,18 +18,12 @@ RUN set -ex \
     libtool pkg-config fftw-dev libfftw3-dev \
     && pip install --no-cache-dir -r requirements.txt \
     && make all install
+    && rm -rf \
+        /var/cache/debconf/*-old \
+        /var/lib/apt/lists/* \
+        /tmp/* \
+        /var/tmp/* \
+        /usr/share/man \
+        /usr/share/doc \
+        /usr/share/doc-base
 
-
-# FROM python2.7-slim
-# 
-# RUN set -ex \
-#     && apt-get update \
-#     && apt-get install --no-install-recommends -y curl git \
-#     && rm -rf \
-#         /var/cache/debconf/*-old \
-#         /var/lib/apt/lists/* \
-#         /tmp/* \
-#         /var/tmp/* \
-#         /usr/share/man \
-#         /usr/share/doc \
-#         /usr/share/doc-base
