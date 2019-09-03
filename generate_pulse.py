@@ -1,7 +1,11 @@
 import click
+from datetime import datetime
+import json
 import logging
 import numpy as np
+import os
 import requests
+import time
 
 import simpulse
 
@@ -45,6 +49,7 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     default=16384,
     help="Number of (equally spaced) frequency samples in the generated pulse array",
 )
+# TODO: should default f_lo/f_hi be 400.1x/800.1x?
 @click.option(
     "--freq_lo_MHz",
     "freq_lo_MHz",
@@ -60,6 +65,23 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     type=float,
     default=800,
     help="Frequency value of the bottom channel in the generated array",
+)
+@click.option(
+    "--ra",
+    "ra",
+    required=True,
+    type=float,
+    help="J2000 right ascension in decimal degrees",
+)
+@click.option(
+    "--dec",
+    "dec",
+    required=True,
+    type=float,
+    help="J2000 declination in decimal degrees",
+)
+@click.option(
+    "--beam_no", "beam_no", required=True, type=int, help="Beam number to inject into"
 )
 @click.option(
     "--dm",
@@ -117,7 +139,6 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     default=None,
     help="The frequency at which the gaussian peaks (in MHz) for a gaussian spectrum modulation",
 )
-# TODO: check if more intuitive to use sigmas with others
 @click.option(
     "--gaussian_fwhm",
     "gaussian_fwhm",
@@ -127,12 +148,20 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     help="The FWHM (in MHz) for a gaussian spectrum modulation",
 )
 @click.option(
+    "--frb_master_url",
+    "frb_master_url",
+    required=True,
+    type=str,
+    default="http://frb-vsop.chime:8001/v1/code/beam-model/get-sensitivity",
+    help="The url used to retrieve the sensitivities from the beam model",
+)
+@click.option(
     "--distributor_url",
     "distributor_url",
     required=True,
     type=str,
     default="http://frb-vsop.chime:8002/distributor/work/mimic",
-    help="The url to add work to the mimic distributor",
+    help="The url used to add work to the mimic distributor",
 )
 @click.option(
     "--unique_id",
@@ -146,6 +175,9 @@ def main(
     nfreq,
     freq_lo_MHz,
     freq_hi_MHz,
+    ra,
+    dec,
+    beam_no,
     dm,
     sm,
     width,
@@ -154,6 +186,7 @@ def main(
     t_arrival,
     gaussian_central_freq,
     gaussian_fwhm,
+    frb_master_url,
     distributor_url,
     unique_id,
 ):
@@ -177,23 +210,30 @@ def main(
     log.info("Adding pulse to timestream...")
     pulse.add_to_timestream(data, chunk_t0, chunk_t1, freq_hi_to_lo=True)
     if gaussian_central_freq and gaussian_fwhm:
-        # Modulate the frequency spectrum bye a gaussian profile
+        # Modulate the frequency spectrum by a gaussian profile
         log.info("Modulating pulse by a gaussian profile...")
         data = gaussian(
             data, gaussian_central_freq, freq_lo_MHz, freq_hi_MHz, gaussian_fwhm
         )
+    # Retrieve the sensitivities from the beam model and modulate the frequency
+    # spectrum once again
+    # TODO: make date more flexible? What does date even end up changing?
+    date = datetime.now().strftime("%Y-%m-%d")
+    payload = {"ra": ra, "dec": dec, "date": date, "beam": beam_no}
+    resp = requests.post(frb_master_url, json=payload)
+    sensitivities = np.array(resp.json()["sensitivities"])
+    data = (data.T * sensitivities).T
     # Make a dictionary object to send our pulse array as a list, marked by id
     # (because python lists are JSON encodable, but np arrays are not)
     # and make a request to add work to the mimic distributor
     # (not using chime_frb_api as this container is python 2.7)
-    payload = {unique_id: data.tolist()}
-    log.info("Sending pulse data to the distributor...")
-    log.debug("distributor_url: {}".format(distributor_url))
-    resp = requests.post(distributor_url, json=payload)
+    # payload = {"work": [json.dumps(data.tolist())]}
+    # log.info("Sending pulse data to the distributor...")
+    # log.debug("distributor_url: {}".format(distributor_url))
+    # resp = requests.post(distributor_url, json=payload)
 
-    log.debug(resp.raise_for_status())
-    log.debug(resp.json())
-    # np.save("test_pulse", data)
+    # log.debug(resp.raise_for_status())
+    # log.debug(resp.json())
 
 
 if __name__ == "__main__":
