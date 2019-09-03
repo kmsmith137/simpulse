@@ -17,7 +17,7 @@ RUN set -ex \
     && apt-get install -y build-essential git cmake autoconf \
     libtool pkg-config fftw-dev libfftw3-dev \
     && pip install --no-cache-dir -r requirements.txt \
-    && make all install
+    && make all install \
     && rm -rf \
         /var/cache/debconf/*-old \
         /var/lib/apt/lists/* \
