@@ -4,6 +4,7 @@ import json
 import logging
 import numpy as np
 import os
+import redis
 import requests
 import time
 
@@ -22,7 +23,7 @@ log = logging.getLogger()
 
 def gaussian(arr, x_0, f_low, f_hi, fwhm):
     assert len(arr.shape) == 2, "Error: Input array must be 2D!"
-    x = np.linspace(f_low, f_hi, arr.shape[0])
+    x = np.linspace(f_low, f_hi, arr.shape[0], dtype=np.float32)
     sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
     exp = np.exp(-1 / 2 * ((x - x_0) / sigma) ** 2)
     # TODO: properly normalizing?
@@ -55,7 +56,7 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     "freq_lo_MHz",
     required=True,
     type=float,
-    default=400,
+    default=400.1953125,
     help="Frequency value of the bottom channel in the generated array",
 )
 @click.option(
@@ -63,7 +64,7 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     "freq_hi_MHz",
     required=True,
     type=float,
-    default=800,
+    default=800.1953125,
     help="Frequency value of the bottom channel in the generated array",
 )
 @click.option(
@@ -156,12 +157,18 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     help="The url used to retrieve the sensitivities from the beam model",
 )
 @click.option(
-    "--distributor_url",
-    "distributor_url",
+    "--redis_host",
+    "redis_host",
     required=True,
     type=str,
-    default="http://frb-vsop.chime:8002/distributor/work/mimic",
-    help="The url used to add work to the mimic distributor",
+    help="The host location for the redis db",
+)
+@click.option(
+    "--redis_port",
+    "redis_port",
+    required=True,
+    type=str,
+    help="The port location for the redis db",
 )
 @click.option(
     "--unique_id",
@@ -187,7 +194,8 @@ def main(
     gaussian_central_freq,
     gaussian_fwhm,
     frb_master_url,
-    distributor_url,
+    redis_host,
+    redis_port,
     unique_id,
 ):
     # Generate a pulse using simpulse and the specified params
@@ -218,23 +226,21 @@ def main(
     # Retrieve the sensitivities from the beam model and modulate the frequency
     # spectrum once again
     # TODO: make date more flexible? What does date even end up changing?
+    log.info("Reterieving the sensitivity from the beam model...")
     date = datetime.now().strftime("%Y-%m-%d")
     payload = {"ra": ra, "dec": dec, "date": date, "beam": beam_no}
     resp = requests.post(frb_master_url, json=payload)
-    sensitivities = np.array(resp.json()["sensitivities"])
+    sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
+    log.info("Modulating pulse by the beam model sensitivity...")
     data = (data.T * sensitivities).T
-    # Make a dictionary object to send our pulse array as a list, marked by id
-    # (because python lists are JSON encodable, but np arrays are not)
-    # and make a request to add work to the mimic distributor
-    # (not using chime_frb_api as this container is python 2.7)
-    # payload = {"work": [json.dumps(data.tolist())]}
+    # Insert the array values into the redis database using redis
+    # lists labelled by id
+    # (NOTE: python lists are JSON encodable, but np arrays are not)
+    r = redis.Redis(host=redis_host, port=redis_port, db=0)
+    r.lpush("{}".format(unique_id),json.dumps(data.tolist()).encode("utf-8"))
     # log.info("Sending pulse data to the distributor...")
     # log.debug("distributor_url: {}".format(distributor_url))
     # resp = requests.post(distributor_url, json=payload)
-
-    # log.debug(resp.raise_for_status())
-    # log.debug(resp.json())
-
 
 if __name__ == "__main__":
     main()

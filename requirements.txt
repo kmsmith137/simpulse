@@ -2,3 +2,4 @@ Click==7.0
 Cython==0.29.13
 numpy==1.16.4
 requests==2.22.0
+redis==3.3.8
