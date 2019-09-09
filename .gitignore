@@ -7,3 +7,4 @@ visual_check/plot*.png
 *~
 *.swp
 test_pulse.npy
+*__pycache__*

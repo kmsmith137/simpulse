@@ -4,11 +4,11 @@ import json
 import logging
 import numpy as np
 import os
-import redis
 import requests
 import time
 
 import simpulse
+from ch_frb_l1.rpc_client import RpcClient
 
 # Logging Config
 LOGGING_CONFIG = {}
@@ -20,18 +20,100 @@ logging_format += "%(message)s"
 logging.basicConfig(format=logging_format, level=logging.DEBUG)
 log = logging.getLogger()
 
+# Define the dispersion constant used for pulsar studies (Manchester & Taylor 1972)
+# NOTE: should probably this import from frb_common, but want to keep container light
+k_DM = 1.0 / 2.41e-4
 
-def gaussian(arr, x_0, f_low, f_hi, fwhm):
-    assert len(arr.shape) == 2, "Error: Input array must be 2D!"
-    x = np.linspace(f_low, f_hi, arr.shape[0], dtype=np.float32)
+
+####################
+# HELPER FUNCTIONS #
+####################
+
+
+def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
+    '''
+    Simple function to generate a gaussian array which will
+    modulate the frequency component of an injected pulse
+    with a gaussian envelope
+
+    INPUT:
+    ------
+    
+    nfreq : int
+        The number of frequency channels in the pulse
+    f_c : float
+        The central frequency of the gaussian
+    f_low : float
+        The lowest frequency (in MHz) of the pulse (eg: 400 MHz for CHIME)
+    f_hi : float
+        The highest frequency (in MHz) of the pulse (eg: 800 MHz for CHIME)
+    fwhm : float
+        The full width at half-maximum for the Gaussian envelope (in MHz)
+    
+    OUTPUT:
+    -------
+
+    gaussian_modulation: numpy array of np.float32
+        Numpy array containing a gaussian profile normalized to an amplitude of 1
+    '''
+    x = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
     sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
     exp = np.exp(-1 / 2 * ((x - x_0) / sigma) ** 2)
     # TODO: properly normalizing?
     # a = 1/(np.sum(exp))
     a = 1
-    # Do some transposing so multiplication works along frequency axis
-    return (arr.T * a * exp).T
+    gaussian_modulation = a * exp
+    return gaussian_modulation
 
+
+def get_frame0_time(url="http://carillon:54321/get-frame0-time"):
+    '''
+    Make a request to recieve the GPS time for frame number 0
+
+    INPUT:
+    ------
+
+    url : string
+        The url from which to request the frame0 ctime
+
+    OUTPUT:
+    -------
+
+    frame0_ctime : np array of np.datetime64
+        The GPS time at frame 0, given as a us precision datetime in a numpy array
+    '''
+    resp = requests.get(url)
+    tinfo = resp.json()
+    frame0_time = np.array(tinfo['frame0_ctime']*1e6, dtype='int').astype('<M8[us]')
+    return frame0_time
+
+
+def timestamp2fpga(time, frame0_ctime):
+    '''
+    Returns the fpga frame number for a given timestamp and frame0 ctime.
+
+    INPUT:
+    ------
+
+    time : datetime
+        The timestamp to turn to an FPGA frame number
+
+    frame0_ctime : datetime
+        The frame0 ctime with which to correct the timestamp
+
+    OUTPUT:
+    -------
+
+    fpga_time : int
+        The FPGA number corresponding to `time`
+    '''
+    fpga_time = int((time - frame0_time).astype(int)/2.56)
+    return fpga_time
+
+
+########
+# MAIN #
+########
 
 @click.command()
 @click.option(
@@ -125,12 +207,11 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     help="Spectral index of the pulse to be generated",
 )
 @click.option(
-    "--t_arrival",
-    "t_arrival",
+    "--t_injection",
+    "t_injection",
     required=True,
-    type=int,
-    default=0,
-    help="Arrival time of the pulse in seconds as freq -> infinity relative to an arbitrary origin",
+    type=str,
+    help="A date string in the form in ISO format (`%y-%m-%dT%H:%M:%SZ`) representing the injection time referenced to infinite frequency",
 )
 @click.option(
     "--gaussian_central_freq",
@@ -149,26 +230,12 @@ def gaussian(arr, x_0, f_low, f_hi, fwhm):
     help="The FWHM (in MHz) for a gaussian spectrum modulation",
 )
 @click.option(
-    "--frb_master_url",
-    "frb_master_url",
+    "--frb_master_base_url",
+    "frb_master_base_url",
     required=True,
     type=str,
-    default="http://frb-vsop.chime:8001/v1/code/beam-model/get-sensitivity",
-    help="The url used to retrieve the sensitivities from the beam model",
-)
-@click.option(
-    "--redis_host",
-    "redis_host",
-    required=True,
-    type=str,
-    help="The host location for the redis db",
-)
-@click.option(
-    "--redis_port",
-    "redis_port",
-    required=True,
-    type=str,
-    help="The port location for the redis db",
+    default="http://frb-vsop.chime:8001",
+    help="The url used to access frb-master",
 )
 @click.option(
     "--unique_id",
@@ -190,57 +257,71 @@ def main(
     width,
     fluence,
     spindex,
-    t_arrival,
+    t_injection,
     gaussian_central_freq,
     gaussian_fwhm,
-    frb_master_url,
-    redis_host,
-    redis_port,
+    frb_master_base_url,
     unique_id,
 ):
+    # Seconds per DM unit of delay (across the frequency band)
+    dmdt = k_DM*(1/freq_lo_MHz**2 - 1/freq_hi_MHz**2)  
+
     # Generate a pulse using simpulse and the specified params
+    t_inf = 0
     pulse = simpulse.single_pulse(
-        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, spindex, t_arrival
+        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, spindex, t_inf
     )
 
-    # Figure out what the array size needs to be to contain the dispersed pulse
-    # TODO: should sampling time be 0.0009xx?
-    dt_sample = 0.001  # in s
-    t_end = pulse.get_endpoints()[1]
-    n_chunks = int(t_end / (nt * dt_sample) + 1)
-    # Create the data array as a memory map, so that the data can be streamed
-    # to the distributor as a binary file in-memory
-    log.info("Creating memory map...")
-    data = np.memmap("pulse", mode="w+", shape=(nfreq, nt * n_chunks), dtype=np.float32)
-    # TODO: should I make n chunks, or just one big intensity array?
-    chunk_t0 = 0
-    chunk_t1 = n_chunks * nt * dt_sample
-    log.info("Adding pulse to timestream...")
-    pulse.add_to_timestream(data, chunk_t0, chunk_t1, freq_hi_to_lo=True)
     if gaussian_central_freq and gaussian_fwhm:
         # Modulate the frequency spectrum by a gaussian profile
-        log.info("Modulating pulse by a gaussian profile...")
-        data = gaussian(
-            data, gaussian_central_freq, freq_lo_MHz, freq_hi_MHz, gaussian_fwhm
+        log.info("Generating gaussian profile...")
+        gaussian_modulation = gaussian(
+            nfreq, gaussian_central_freq, freq_lo_MHz, freq_hi_MHz, gaussian_fwhm
         )
+    
     # Retrieve the sensitivities from the beam model and modulate the frequency
     # spectrum once again
     # TODO: make date more flexible? What does date even end up changing?
-    log.info("Reterieving the sensitivity from the beam model...")
+    log.info("Retrieving the sensitivity from the beam model...")
+    frb_master_url = frb_master_base_url + "/v1/code/beam-model/get-sensitivity"
     date = datetime.now().strftime("%Y-%m-%d")
     payload = {"ra": ra, "dec": dec, "date": date, "beam": beam_no}
     resp = requests.post(frb_master_url, json=payload)
     sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
-    log.info("Modulating pulse by the beam model sensitivity...")
-    data = (data.T * sensitivities).T
-    # Insert the array values into the redis database using redis
-    # lists labelled by id
-    # (NOTE: python lists are JSON encodable, but np arrays are not)
-    r = redis.Redis(host=redis_host, port=redis_port, db=0)
-    r.lpush("{}".format(unique_id),json.dumps(data.tolist()).encode("utf-8"))
-    # log.info("Sending pulse data to the distributor...")
-    # log.debug("distributor_url: {}".format(distributor_url))
-    # resp = requests.post(distributor_url, json=payload)
+    log.info("Modulating the gaussian profile by the beam model sensitivity...")
+    freq_modulation = gaussian_modulation * sensitivities
+   
+    # Get the tcp server address for the given beam_no from frb-master
+    log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
+    frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(beam_no)
+    resp = requests.get(frb_master_url)
+    rpc_server = resp.json()["rpc_server"]
+    if rpc_server.endswith("5555"):
+        rpc_server = rpc_server.replace("5555", "5556")
+    log.info("rpc_server: {}".format(rpc_server))
+
+    # Create an RpcClient object which will send a pulse injection request to L1 
+    servers = {"injections-test" : rpc_server}
+    client = RpcClient(servers=servers)
+
+    # Determine the fpga frame number for the injection
+    t_injection = np.datetime64(datetime.strptime(t_injection), 'us')
+    frame0_ctime = get_frame0_time()
+    fpga0 = timestamp2fpga(t_injection, frame0_ctime)
+    log.info("fpga0: {}".format(fpga0))
+
+    # Make the request to the RpcClient to inject the pulse at fpga0
+    # TODO: modify RpcClient to take in a frequency modulation array when
+    # injecting a pulse
+    resp = client.inject_single_pulse(
+        beam_no, 
+        pulse, 
+        fpga0, 
+        wait=True,
+        nfreq=nfreq, 
+    )
+    log.info("Injection results: {}".format(resp))
+
 
 if __name__ == "__main__":
     main()
