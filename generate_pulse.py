@@ -31,7 +31,7 @@ k_DM = 1.0 / 2.41e-4
 
 
 def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
-    '''
+    """
     Simple function to generate a gaussian array which will
     modulate the frequency component of an injected pulse
     with a gaussian envelope
@@ -55,7 +55,7 @@ def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
 
     gaussian_modulation: numpy array of np.float32
         Numpy array containing a gaussian profile normalized to an amplitude of 1
-    '''
+    """
     x = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
     sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
     exp = np.exp(-1 / 2 * ((x - x_0) / sigma) ** 2)
@@ -67,7 +67,7 @@ def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
 
 
 def get_frame0_time(url="http://carillon:54321/get-frame0-time"):
-    '''
+    """
     Make a request to recieve the GPS time for frame number 0
 
     INPUT:
@@ -81,15 +81,15 @@ def get_frame0_time(url="http://carillon:54321/get-frame0-time"):
 
     frame0_ctime : np array of np.datetime64
         The GPS time at frame 0, given as a us precision datetime in a numpy array
-    '''
+    """
     resp = requests.get(url)
     tinfo = resp.json()
-    frame0_time = np.array(tinfo['frame0_ctime']*1e6, dtype='int').astype('<M8[us]')
+    frame0_time = np.array(tinfo["frame0_ctime"] * 1e6, dtype="int").astype("<M8[us]")
     return frame0_time
 
 
 def timestamp2fpga(time, frame0_ctime):
-    '''
+    """
     Returns the fpga frame number for a given timestamp and frame0 ctime.
 
     INPUT:
@@ -106,14 +106,15 @@ def timestamp2fpga(time, frame0_ctime):
 
     fpga_time : int
         The FPGA number corresponding to `time`
-    '''
-    fpga_time = int((time - frame0_time).astype(int)/2.56)
+    """
+    fpga_time = int((time - frame0_ctime).astype(int) / 2.56)
     return fpga_time
 
 
 ########
 # MAIN #
 ########
+
 
 @click.command()
 @click.option(
@@ -263,8 +264,10 @@ def main(
     frb_master_base_url,
     unique_id,
 ):
+    log.info("Beginning generate_pulse routine...")
+
     # Seconds per DM unit of delay (across the frequency band)
-    dmdt = k_DM*(1/freq_lo_MHz**2 - 1/freq_hi_MHz**2)  
+    dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
 
     # Generate a pulse using simpulse and the specified params
     t_inf = 0
@@ -278,7 +281,9 @@ def main(
         gaussian_modulation = gaussian(
             nfreq, gaussian_central_freq, freq_lo_MHz, freq_hi_MHz, gaussian_fwhm
         )
-    
+    else:
+        log.info("No gaussian component specified, continuing...")
+
     # Retrieve the sensitivities from the beam model and modulate the frequency
     # spectrum once again
     # TODO: make date more flexible? What does date even end up changing?
@@ -290,22 +295,24 @@ def main(
     sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
     log.info("Modulating the gaussian profile by the beam model sensitivity...")
     freq_modulation = gaussian_modulation * sensitivities
-   
+
     # Get the tcp server address for the given beam_no from frb-master
     log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
-    frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(beam_no)
+    frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(
+        beam_no
+    )
     resp = requests.get(frb_master_url)
     rpc_server = resp.json()["rpc_server"]
     if rpc_server.endswith("5555"):
         rpc_server = rpc_server.replace("5555", "5556")
     log.info("rpc_server: {}".format(rpc_server))
 
-    # Create an RpcClient object which will send a pulse injection request to L1 
-    servers = {"injections-test" : rpc_server}
+    # Create an RpcClient object which will send a pulse injection request to L1
+    servers = {"injections-test": rpc_server}
     client = RpcClient(servers=servers)
 
     # Determine the fpga frame number for the injection
-    t_injection = np.datetime64(datetime.strptime(t_injection), 'us')
+    t_injection = np.datetime64(datetime.strptime(t_injection), "us")
     frame0_ctime = get_frame0_time()
     fpga0 = timestamp2fpga(t_injection, frame0_ctime)
     log.info("fpga0: {}".format(fpga0))
@@ -313,13 +320,7 @@ def main(
     # Make the request to the RpcClient to inject the pulse at fpga0
     # TODO: modify RpcClient to take in a frequency modulation array when
     # injecting a pulse
-    resp = client.inject_single_pulse(
-        beam_no, 
-        pulse, 
-        fpga0, 
-        wait=True,
-        nfreq=nfreq, 
-    )
+    resp = client.inject_single_pulse(beam_no, pulse, fpga0, wait=True, nfreq=nfreq)
     log.info("Injection results: {}".format(resp))
 
 
