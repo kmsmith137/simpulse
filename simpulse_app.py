@@ -6,6 +6,7 @@ import numpy as np
 import os
 import requests
 import time
+from flask import Flask, request
 
 import simpulse
 from ch_frb_l1.rpc_client import RpcClient
@@ -23,6 +24,10 @@ log = logging.getLogger()
 # Define the dispersion constant used for pulsar studies (Manchester & Taylor 1972)
 # NOTE: should probably this import from frb_common, but want to keep container light
 k_DM = 1.0 / 2.41e-4
+
+
+# Initialize the Flask application
+app = Flask(__name__)
 
 
 ####################
@@ -111,160 +116,33 @@ def timestamp2fpga(time, frame0_ctime):
     return fpga_time
 
 
-########
-# MAIN #
-########
+###################
+# PULSE INJECTION #
+###################
 
-
-@click.command()
-@click.option(
-    "--nt",
-    "nt",
-    required=True,
-    type=int,
-    default=1024,
-    help="Number of time samples in the generated pulse array",
-)
-@click.option(
-    "--nfreq",
-    "nfreq",
-    required=True,
-    type=int,
-    default=16384,
-    help="Number of (equally spaced) frequency samples in the generated pulse array",
-)
-# TODO: should default f_lo/f_hi be 400.1x/800.1x?
-@click.option(
-    "--freq_lo_MHz",
-    "freq_lo_MHz",
-    required=True,
-    type=float,
-    default=400.1953125,
-    help="Frequency value of the bottom channel in the generated array",
-)
-@click.option(
-    "--freq_hi_MHz",
-    "freq_hi_MHz",
-    required=True,
-    type=float,
-    default=800.1953125,
-    help="Frequency value of the bottom channel in the generated array",
-)
-@click.option(
-    "--ra",
-    "ra",
-    required=True,
-    type=float,
-    help="J2000 right ascension in decimal degrees",
-)
-@click.option(
-    "--dec",
-    "dec",
-    required=True,
-    type=float,
-    help="J2000 declination in decimal degrees",
-)
-@click.option(
-    "--beam_no", "beam_no", required=True, type=int, help="Beam number to inject into"
-)
-@click.option(
-    "--dm",
-    "dm",
-    required=True,
-    type=float,
-    default=0,
-    help="DM of the pulse to be generated",
-)
-@click.option(
-    "--sm",
-    "sm",
-    required=True,
-    type=float,
-    default=0,
-    help="SM (scattering time in ms at 1GHz) of the pulse to be generated",
-)
-@click.option(
-    "--intrinsic_width",
-    "width",
-    required=True,
-    type=float,
-    default=0.001,
-    help="Width of the pulse to be generated, in seconds",
-)
-@click.option(
-    "--fluence",
-    "fluence",
-    required=True,
-    type=float,
-    # TODO: figure out fluence units
-    help="Fluence of the pulse to be generated in units * s",
-)
-@click.option(
-    "--spectral_index",
-    "spindex",
-    required=True,
-    type=float,
-    default=0,
-    help="Spectral index of the pulse to be generated",
-)
-@click.option(
-    "--t_injection",
-    "t_injection",
-    required=True,
-    type=str,
-    help="A date string in the form in ISO format (`%y-%m-%dT%H:%M:%SZ`) representing the injection time referenced to infinite frequency",
-)
-@click.option(
-    "--gaussian_central_freq",
-    "gaussian_central_freq",
-    required=False,
-    type=float,
-    default=None,
-    help="The frequency at which the gaussian peaks (in MHz) for a gaussian spectrum modulation",
-)
-@click.option(
-    "--gaussian_fwhm",
-    "gaussian_fwhm",
-    required=False,
-    type=float,
-    default=None,
-    help="The FWHM (in MHz) for a gaussian spectrum modulation",
-)
-@click.option(
-    "--frb_master_base_url",
-    "frb_master_base_url",
-    required=True,
-    type=str,
-    default="http://frb-vsop.chime:8001",
-    help="The url used to access frb-master",
-)
-@click.option(
-    "--unique_id",
-    "unique_id",
-    required=True,
-    type=str,
-    help="Unique id used to identify the given injection",
-)
-def main(
-    nt,
-    nfreq,
-    freq_lo_MHz,
-    freq_hi_MHz,
-    ra,
-    dec,
-    beam_no,
-    dm,
-    sm,
-    width,
-    fluence,
-    spindex,
-    t_injection,
-    gaussian_central_freq,
-    gaussian_fwhm,
-    frb_master_base_url,
-    unique_id,
-):
+# An endpoint to inject a pulse into a CHIME/FRB L1 node
+@app.route("/inject-pulse", methods=["POST"])
+def inject_pulse():
     log.info("Beginning generate_pulse routine...")
+    # Unpack the data from the injection service
+    data = request.get_json()
+    nt = data["nt"]
+    nfreq = data["nfreq"]
+    freq_lo_MHz = data["freq_lo_MHz"]
+    freq_hi_MHz = data["freq_hi_MHz"]
+    ra = data["ra"]
+    dec = data["dec"]
+    beam_no = data["beam_no"]
+    dm = data["dm"]
+    sm = data["sm"]
+    width = data["width"]
+    fluence = data["fluence"]
+    spindex = data["spindex"]
+    t_injection = data["t_injection"]
+    gaussian_central_freq = data["gaussian_central_freq"]
+    gaussian_fwhm = data["gaussian_fwhm"]
+    unique_id = data["unique_id"]
+    frb_master_base_url = data["frb_master_base_url"]
 
     # Seconds per DM unit of delay (across the frequency band)
     dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
@@ -304,6 +182,7 @@ def main(
     )
     resp = requests.get(frb_master_url)
     rpc_server = resp.json()["rpc_server"]
+    # Use the "heavy" rpc port for data injection
     if rpc_server.endswith("5555"):
         rpc_server = rpc_server.replace("5555", "5556")
     log.info("rpc_server: {}".format(rpc_server))
@@ -330,4 +209,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True, port=8004)

@@ -2,10 +2,15 @@ certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
 Cython==0.29.13
+Flask==1.1.1
 idna==2.8
+itsdangerous==1.1.0
+Jinja2==2.10.3
+MarkupSafe==1.1.1
 msgpack==0.6.1
 numpy==1.16.4
 pyzmq==18.1.0
 requests==2.22.0
 urllib3==1.25.3
+Werkzeug==0.16.0
 zmq==0.0.0
