@@ -141,8 +141,12 @@ def inject_pulse():
     t_injection = data["t_injection"]
     gaussian_central_freq = data["gaussian_central_freq"]
     gaussian_fwhm = data["gaussian_fwhm"]
-    unique_id = data["unique_id"]
     frb_master_base_url = data["frb_master_base_url"]
+    
+    # Make some basic assertions
+    assert 0 < beam_no < 255 or 1000 < beam_no < 1255 or 2000 < beam_no < 2255 or 3000 < beam_no < 3255, "ERROR: invalid beam_no!"
+    t_injection_dt = datetime.strptime(t_injection, "%Y-%m-%dT%H:%M:%S.%fZ")
+    assert t_injection_dt > datetime.utcnow(), "ERROR: t_injection must not be in the past!"
 
     # Seconds per DM unit of delay (across the frequency band)
     dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
@@ -188,6 +192,7 @@ def inject_pulse():
     log.info("rpc_server: {}".format(rpc_server))
 
     # Create an RpcClient object which will send a pulse injection request to L1
+    # TODO: better server name (do these need unique names?)
     servers = {"injections-test": rpc_server}
     client = RpcClient(servers=servers)
 
@@ -203,10 +208,12 @@ def inject_pulse():
     # injection beams
     # TODO: modify RpcClient to take in a frequency modulation array when
     # injecting a pulse
-    injection_beam = beam_no + 10000
-    resp = client.inject_single_pulse(beam_no, pulse, fpga0, wait=True, nfreq=nfreq)
-    log.info("Injection results: {}".format(resp))
+    beam_no_offset = beam_no + 10000
+    log.info("Injecting into beam {}...".format(beam_no_offset))
+    resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq)
+    log.info("Injection completed!")
+    return
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8004)
+    app.run(host="0.0.0.0", debug=True, port=8004)
