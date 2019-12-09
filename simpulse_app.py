@@ -29,6 +29,11 @@ k_DM = 1.0 / 2.41e-4
 # Initialize the Flask application
 app = Flask(__name__)
 
+# TODO: testing with a single beam, so forcing the rpc client to the beam that's
+# running duplication code now for testing
+servers = {"injections-test": "tcp://10.6.205.12:5556"}
+client = RpcClient(servers=servers)
+
 
 ####################
 # HELPER FUNCTIONS #
@@ -71,54 +76,10 @@ def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
     return gaussian_modulation
 
 
-def get_frame0_time(url="http://carillon.chime:54321/get-frame0-time"):
-    """
-    Make a request to recieve the GPS time for frame number 0
-
-    INPUT:
-    ------
-
-    url : string
-        The url from which to request the frame0 ctime
-
-    OUTPUT:
-    -------
-
-    frame0_ctime : np array of np.datetime64
-        The GPS time at frame 0, given as a us precision datetime in a numpy array
-    """
-    resp = requests.get(url)
-    tinfo = resp.json()
-    frame0_time = np.array(tinfo["frame0_ctime"] * 1e6, dtype="int").astype("<M8[us]")
-    return frame0_time
-
-
-def timestamp2fpga(time, frame0_ctime):
-    """
-    Returns the fpga frame number for a given timestamp and frame0 ctime.
-
-    INPUT:
-    ------
-
-    time : datetime
-        The timestamp to turn to an FPGA frame number
-
-    frame0_ctime : datetime
-        The frame0 ctime with which to correct the timestamp
-
-    OUTPUT:
-    -------
-
-    fpga_time : int
-        The FPGA number corresponding to `time`
-    """
-    fpga_time = int((time - frame0_ctime).astype(int) / 2.56)
-    return fpga_time
-
-
 ###################
 # PULSE INJECTION #
 ###################
+
 
 # An endpoint to inject a pulse into a CHIME/FRB L1 node
 @app.route("/inject-pulse", methods=["POST"])
@@ -142,6 +103,7 @@ def inject_pulse():
     gaussian_central_freq = data["gaussian_central_freq"]
     gaussian_fwhm = data["gaussian_fwhm"]
     frb_master_base_url = data["frb_master_base_url"]
+    fpga0 = data["fpga0"]
     
     # Make some basic assertions
     assert 0 < beam_no < 255 or 1000 < beam_no < 1255 or 2000 < beam_no < 2255 or 3000 < beam_no < 3255, "ERROR: invalid beam_no!"
@@ -180,28 +142,21 @@ def inject_pulse():
     freq_modulation = gaussian_modulation * sensitivities
 
     # Get the tcp server address for the given beam_no from frb-master
-    log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
-    frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(
-        beam_no
-    )
-    resp = requests.get(frb_master_url)
-    rpc_server = resp.json()["rpc_server"]
+    #log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
+    #frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(
+    #    beam_no
+    #)
+    #resp = requests.get(frb_master_url)
+    #rpc_server = resp.json()["rpc_server"]
     # Use the "heavy" rpc port for data injection
-    if rpc_server.endswith("5555"):
-        rpc_server = rpc_server.replace("5555", "5556")
-    log.info("rpc_server: {}".format(rpc_server))
+    #if rpc_server.endswith("5555"):
+    #    rpc_server = rpc_server.replace("5555", "5556")
+    #log.info("rpc_server: {}".format(rpc_server))
 
     # Create an RpcClient object which will send a pulse injection request to L1
     # TODO: better server name (do these need unique names?)
-    servers = {"injections-test": rpc_server}
-    client = RpcClient(servers=servers)
-
-    # Determine the fpga frame number for the injection
-    date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-    t_injection = np.datetime64(datetime.strptime(t_injection, date_format), "us")
-    frame0_ctime = get_frame0_time()
-    fpga0 = timestamp2fpga(t_injection, frame0_ctime)
-    log.info("fpga0: {}".format(fpga0))
+    #servers = {"injections-test": rpc_server}
+    #client = RpcClient(servers=servers)
 
     # Make the request to the RpcClient to inject the pulse at fpga0
     # NOTE: offsetting beam_no by 10000 as that is currently how we verify
@@ -212,7 +167,7 @@ def inject_pulse():
     log.info("Injecting into beam {}...".format(beam_no_offset))
     resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq)
     log.info("Injection completed!")
-    return
+    return {"injection": True}
 
 
 if __name__ == "__main__":

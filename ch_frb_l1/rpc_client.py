@@ -492,12 +492,18 @@ class RpcClient(object):
         Injects a *simpulse* simulated pulse *sp* into the given *beam*, starting
         at the reference time *fpga0* in FPGAcounts units.
         '''
+        print("Beginning inject_single_pulse routine...")
         # NOTE, some approximations here
         t0,t1 = sp.get_endpoints()
+        print("t0, t1: {}, {}".format(t0, t1))
         sample_period = fpga_counts_per_sample * fpga_period
+        print("sample_period: {}".format(sample_period))
         nt = int(np.ceil((t1 - t0) / sample_period))
+        print("nt: {}".format(nt))
         t1x = t0 + nt*sample_period
+        print("t1x: {}".format(t1x))
         nsparse = sp.get_n_sparse(t0, t1x, nt)
+        print("nsparse: {}".format(nsparse))
         print('Pulse time range:', t0, t1x, 'NT', nt, 'N sparse:', nsparse)
         sparse_data = np.zeros(nsparse, np.float32)
         sparse_i0 = np.zeros(nfreq, np.int32)
