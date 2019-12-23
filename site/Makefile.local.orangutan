@@ -26,4 +26,4 @@ NUMPY_INCDIR2=/usr/local/lib/python2.7/dist-packages/numpy/core/include
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
 
-CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR1) $(NUMPY_INCDIR2) -L. -L$(LIBDIR)
+CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR1) -I$(NUMPY_INCDIR2) -L. -L$(LIBDIR)
