@@ -95,15 +95,15 @@ def inject_pulse():
     dec = data["dec"]
     beam_no = data["beam_no"]
     dm = data["dm"]
-    sm = data["sm"]
-    width = data["width"]
+    sm = data["tau_1_ghz"]
+    width = data["pulse_width_ms"]*1000
     fluence = data["fluence"]
     spindex = data["spindex"]
-    t_injection = data["t_injection"]
+    t_injection = data["injection_time"]
     gaussian_central_freq = data["gaussian_central_freq"]
     gaussian_fwhm = data["gaussian_fwhm"]
     frb_master_base_url = data["frb_master_base_url"]
-    fpga0 = data["fpga0"]
+    fpga0 = data["timestamp_fpga_injection"]
     
     # Make some basic assertions
     assert 0 < beam_no < 255 or 1000 < beam_no < 1255 or 2000 < beam_no < 2255 or 3000 < beam_no < 3255, "ERROR: invalid beam_no!"
@@ -132,14 +132,14 @@ def inject_pulse():
     # Retrieve the sensitivities from the beam model and modulate the frequency
     # spectrum once again
     # TODO: make date more flexible? What does date even end up changing?
-    log.info("Retrieving the sensitivity from the beam model...")
-    frb_master_url = frb_master_base_url + "/v1/code/beam-model/get-sensitivity"
-    log.info("frb_master_url: {}".format(frb_master_url))
-    payload = {"ra": ra, "dec": dec, "date": t_injection, "beam": beam_no}
-    resp = requests.post(frb_master_url, json=payload)
-    sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
-    log.info("Modulating the gaussian profile by the beam model sensitivity...")
-    freq_modulation = gaussian_modulation * sensitivities
+    #log.info("Retrieving the sensitivity from the beam model...")
+    #frb_master_url = frb_master_base_url + "/v1/code/beam-model/get-sensitivity"
+    #log.info("frb_master_url: {}".format(frb_master_url))
+    #payload = {"ra": ra, "dec": dec, "date": t_injection, "beam": beam_no}
+    #resp = requests.post(frb_master_url, json=payload)
+    #sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
+    #log.info("Modulating the gaussian profile by the beam model sensitivity...")
+    #freq_modulation = gaussian_modulation * sensitivities
 
     # Get the tcp server address for the given beam_no from frb-master
     #log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
@@ -166,9 +166,12 @@ def inject_pulse():
     beam_no_offset = beam_no + 10000
     log.info("Injecting into beam {}...".format(beam_no_offset))
     resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq)
+    log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
     return {"injection": True}
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=8004)
+    SIMPULSE_HOST = os.environ.get("SIMPULSE_HOST", "0.0.0.0")
+    SIMPULSE_PORT = os.environ.get("SIMPULSE_PORT", "8221")
+    app.run(host=SIMPULSE_HOST, debug=True, port=SIMPULSE_PORT)
