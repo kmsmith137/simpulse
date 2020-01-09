@@ -96,7 +96,7 @@ def inject_pulse():
     beam_no = data["beam_no"]
     dm = data["dm"]
     sm = data["tau_1_ghz"]
-    width = data["pulse_width_ms"]*1000
+    width = data["pulse_width_ms"]/1000
     fluence = data["fluence"]
     spindex = data["spindex"]
     t_injection = data["injection_time"]
@@ -165,6 +165,7 @@ def inject_pulse():
     # injecting a pulse
     beam_no_offset = beam_no + 10000
     log.info("Injecting into beam {}...".format(beam_no_offset))
+    log.debug("Pulse argument: {}".format(pulse))
     resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq)
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
