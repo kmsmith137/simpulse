@@ -66,10 +66,7 @@ double keplerian_binary_phase_model::eval_phi(double t, int nderivs) const
     if (nderivs == 1)
 	return Porb / 2 / M_PI / P * (1 - e * cos(E)) * dEdtobs;
     if (nderivs == 2)
-    {
-        return Porb / 2 / M_PI / P * pow(dEdtobs, 2) * 
-	       (e * sin(E) - (1 - e * cos(E)) * (Porb / 2 / M_PI * e * sin(E)  + a * nx * cos(E) + b * ny * sin(E)) * dEdtobs);
-    }
+	return Porb / 2 / M_PI / P * pow(dEdtobs, 3) * (a * e * nx - a * nx * cos(E) - b * ny * sin(E));
     throw runtime_error("keplerian_binary_phase_model::eval_phi() nderivs != 0, 1, 2 not implemented yet");
 }
 
