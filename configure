@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+hpp_files = [
+    'simpulse.hpp',
+    'simpulse_internals.hpp'
+]
+
+cpp_core_files = [
+    'constant_acceleration_phase_model.cpp',
+    'single_pulse.cpp',
+    'von_mises_profile.cpp'
+]
+
+
+####################################################################################################
+
+
+import build_helpers
+
+# If called recursively in superbuild, a global persistent ConfigureScript will be returned.
+cs = build_helpers.get_global_configure_script()
+
+# Prerequisites.
+cs.configure_install_directories(bin=False, inc=True, lib=True, py=False)
+cs.configure_cpp('-std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops --param inline-unit-growth=10000')
+cs.configure_lib_fftw3()
+
+# Install .hpp header files.
+cs.install_cpp_headers(hpp_files)
+
+# C++ library
+cs.make_cpp_library(libname='simpulse', sources=cpp_core_files, install=True)
+
+# Cython module
+cs.make_cython_cpp_file('cython/simpulse.pyx', ['cython/simpulse_pxd.pxd'])
+cs.make_python_extension_module('cython/simpulse.so', ['cython/simpulse.cpp'], libraries=['simpulse','fftw3'])
+cs.install_python_module('cython/simpulse.so')
+
+# If called recursively in superbuild, write_output_files() will not be called here.
+if __name__ == '__main__':
+    cs.write_output_files()
