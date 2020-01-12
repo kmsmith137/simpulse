@@ -6,6 +6,7 @@ import build_helpers
 lu = build_helpers.get_global_legacy_uninstaller()
 
 lu.uninstall_headers('simpulse.hpp')
+lu.uninstall_headers('simpulse_internals.hpp')
 lu.uninstall_headers('simpulse/*.hpp')
 lu.uninstall_headers('simpulse/')
 lu.uninstall_libraries('libsimpulse.*')
