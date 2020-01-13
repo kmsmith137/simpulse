@@ -21,7 +21,7 @@ import build_helpers
 cs = build_helpers.get_global_configure_script()
 
 # Prerequisites.
-cs.configure_install_directories(bin=False, inc=True, lib=True, py=False)
+cs.configure_install_directories(bin=False, inc=True, lib=True, py=True)
 cs.configure_cpp('-std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops --param inline-unit-growth=10000')
 cs.configure_lib_fftw3()
 
