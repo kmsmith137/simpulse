@@ -19,17 +19,17 @@ import build_helpers
 
 # If called recursively in superbuild, a global persistent ConfigureScript will be returned.
 cs = build_helpers.get_global_configure_script()
-
-# Prerequisites.
 cs.configure_install_directories(bin=False, inc=True, lib=True, py=True)
 cs.configure_cpp('-std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops --param inline-unit-growth=10000')
-cs.configure_lib_fftw3()
+
+# Prerequisites.
+cs.configure_external_library(build_helpers.external_libraries.fftw3)
 
 # Install .hpp header files.
 cs.install_cpp_headers(hpp_files)
 
 # C++ library
-cs.make_cpp_library(libname='simpulse', sources=cpp_core_files, install=True)
+cs.make_cpp_library(libname='simpulse', sources=cpp_core_files, sublibs=['fftw3'], install=True)
 
 # Cython module
 cs.make_cython_cpp_file('cython/simpulse.pyx', ['cython/simpulse_pxd.pxd'])
