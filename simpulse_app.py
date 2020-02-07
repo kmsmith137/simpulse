@@ -68,11 +68,7 @@ def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
     """
     freq = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
     sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
-    exp = np.exp(-1 / 2 * ((freq - f_c) / sigma) ** 2)
-    # TODO: properly normalizing?
-    # a = 1/(np.sum(exp))
-    a = 1
-    gaussian_modulation = a * exp
+    gaussian_modulation = np.exp(-1 / 2 * ((freq - f_c) / sigma) ** 2)
     return gaussian_modulation
 
 
@@ -138,8 +134,9 @@ def inject_pulse():
     #payload = {"ra": ra, "dec": dec, "date": t_injection, "beam": beam_no}
     #resp = requests.post(frb_master_url, json=payload)
     #sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
-    #log.info("Modulating the gaussian profile by the beam model sensitivity...")
-    #freq_modulation = gaussian_modulation * sensitivities
+    sensitivities = np.ones(nfreq, dtype=np.float32)
+    log.info("Modulating the gaussian profile by the beam model sensitivity...")
+    spectral_modulation = gaussian_modulation * sensitivities
 
     # Get the tcp server address for the given beam_no from frb-master
     #log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
@@ -153,11 +150,6 @@ def inject_pulse():
     #    rpc_server = rpc_server.replace("5555", "5556")
     #log.info("rpc_server: {}".format(rpc_server))
 
-    # Create an RpcClient object which will send a pulse injection request to L1
-    # TODO: better server name (do these need unique names?)
-    #servers = {"injections-test": rpc_server}
-    #client = RpcClient(servers=servers)
-
     # Make the request to the RpcClient to inject the pulse at fpga0
     # NOTE: offsetting beam_no by 10000 as that is currently how we verify
     # injection beams
@@ -166,7 +158,7 @@ def inject_pulse():
     beam_no_offset = beam_no + 10000
     log.info("Injecting into beam {}...".format(beam_no_offset))
     log.debug("Pulse argument: {}".format(pulse))
-    resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq)
+    resp = client.inject_single_pulse(beam_no_offset, pulse, fpga0, wait=True, nfreq=nfreq, spectral_modulation=spectral_modulation)
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
     return {"injection": True}
