@@ -581,15 +581,19 @@ class RpcClient(object):
         data = []
         ntotal = 0
         if spectral_modulation is not None:
+            print("Applying spectral modulation to the pulse...")
             if len(spectral_modulation) != nfreq:
                 raise RuntimeError(
                     "spectral_modulation, if given, must be an array with length nfreq"
                 )
             for i, n in enumerate(sparse_n):
                 data.append(sparse_data[ntotal : ntotal + n] * spectral_modulation[i])
+                ntotal += n
             # Normalize the fluence to the value from simpulse after modulation
             data_np = np.hstack(data)
-            factor = sp.fluence / data_np.sum()
+            print("Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}".format(sparse_data.sum(), data_np.sum(), sparse_n))
+            factor = sp.fluence * sp.pulse_nt * sp.nfreq / data_np.sum()
+            print("Multiplicative factor to conserve fluence: {}".format(factor))
             for i in range(len(data)):
                 for j in range(len(data[i])):
                     data[i][j] *= factor
