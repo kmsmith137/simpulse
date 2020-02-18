@@ -1,31 +1,26 @@
-# Makefile.local for orangutan.perimeterinstitute.ca (Ubuntu 16.04)
+# Makefile.local for the simpulse docker container
+# Note: in the container, $(HOME) <-> /usr
 
 # Directory where C++ libraries will be installed
-LIBDIR=$(HOME)/lib
+LIBDIR=/usr/lib
 
 # Directory where C++ header files will be installed
-INCDIR=$(HOME)/include
-
-# Directory for C++ header files
-INCDIR_2=/usr/include/
-
-# Directory for python C++ header files
-PY_C_INCDIR=/home/marcus/miniconda3/envs/py27/include/
+INCDIR=/usr/include
 
 # Directory where Python modules will be installed
 # Don't forget to add $(PYDIR) to your PYTHONPATH environment variable
-PYDIR=/home/marcus/miniconda3/envs/py27/lib/python2.7/site-packages/
+PYDIR=/usr/local/lib/python2.7/site-packages
 
 # Read-only location of python header files, needed for cython
 # Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc()
-PYTHON_INCDIR=/home/marcus/miniconda3/envs/py27/include/python2.7
+PYTHON_INCDIR=/usr/local/include/python2.7
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
-NUMPY_INCDIR=/home/marcus/miniconda3/envs/py27/lib/python2.7/site-packages/numpy/core/include
+NUMPY_INCDIR=/usr/local/lib/python2.7/site-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
 
-CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I $(PY_C_INCDIR) -I $(INCDIR_2) -I $(PY_C_INCDIR) -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)
+CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)

@@ -591,14 +591,19 @@ class RpcClient(object):
                 ntotal += n
             # Normalize the fluence to the value from simpulse after modulation
             data_np = np.hstack(data)
-            print("Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}".format(sparse_data.sum(), data_np.sum(), sparse_n))
             factor = sp.fluence * sp.pulse_nt * sp.nfreq / data_np.sum()
             print("Multiplicative factor to conserve fluence: {}".format(factor))
             for i in range(len(data)):
                 for j in range(len(data[i])):
                     data[i][j] *= factor
-
+            data_new_np = np.hstack(data)
+            print(
+                "Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}\nfactor corrected sum: {}".format(
+                    sparse_data.sum(), data_np.sum(), sparse_n, data_new_np.sum()
+                )
+            )
         else:
+            print("No spectral modulation given to apply to the pulse...")
             for n in sparse_n:
                 data.append(sparse_data[ntotal : ntotal + n])
                 ntotal += n
@@ -1464,7 +1469,7 @@ if __name__ == "__main__":
                 print("First weights:", w[:16])
                 print("First variances:", v[:16])
                 v = np.array(list(reversed(v)))
-                nz, = np.nonzero(v > 0)
+                (nz,) = np.nonzero(v > 0)
                 print("v", len(v), "freqs", len(freqs))
                 plt.plot(freqs, v, ".", label="Beam %i" % int(b))
                 if len(nz):
