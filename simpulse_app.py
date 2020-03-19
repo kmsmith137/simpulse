@@ -81,6 +81,37 @@ def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
     return gaussian_modulation
 
 
+def empirical_spectral_model(nfreq, f_low, f_hi, spindex, running):
+    """
+    Simple function to generate an array which can modulate the
+    spectrum of an injected pulse using the empirical FRB model
+    with spectral index and spectral running from the morphologies
+    working group
+
+    INPUT:
+    ------
+
+    nfreq : int
+        The number of frequency channels in the pulse
+    f_low : float
+        The lowest frequency (in MHz) of the pulse (eg: 400 MHz for CHIME)
+    f_hi : float
+        The highest frequency (in MHz) of the pulse (eg: 800 MHz for CHIME)
+    spindex : float
+        The spectral index of the pulse to be used in the empirical model
+    running : float
+        The spectral running of the pulse to be used in the empirical model
+
+    OUTPUT:
+    -------
+
+    empirical_modulation: numpy array of np.float32
+        Numpy array containing the spectral modulation of the model
+    """
+    freq = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
+    empirical_modulation = (freq / f_low) ** (spindex + running * np.log(freq / f_low))
+    return empirical_modulation
+
 def make_pulse_plot(pulse, spectral_modulation=None, fn=None):
     """
     A function to create a plot of the pulse to be injected. The plot
@@ -197,6 +228,7 @@ def inject_pulse():
     width = data["pulse_width_ms"] / 1000
     fluence = data["fluence"]
     spindex = data["spindex"]
+    running = data["running"]
     t_injection = data["injection_time"]
     gaussian_central_freq = data["gaussian_central_freq"]
     gaussian_fwhm = data["gaussian_fwhm"]
