@@ -37,7 +37,7 @@ app = Flask(__name__)
 
 # TODO: testing with a single beam, so forcing the rpc client to the beam that's
 # running duplication code now for testing
-servers = {"injections-test": "tcp://10.6.205.12:5556"}
+servers = {"injections": "tcp://10.8.210.16:5556"}
 client = RpcClient(servers=servers)
 
 # Set the location to save plots
@@ -48,69 +48,6 @@ plot_dir = "/frb-archiver/frb-injections"
 # HELPER FUNCTIONS #
 ####################
 
-
-def gaussian(nfreq, f_c, f_low, f_hi, fwhm):
-    """
-    Simple function to generate a gaussian array which will
-    modulate the frequency component of an injected pulse
-    with a gaussian envelope
-
-    INPUT:
-    ------
-    
-    nfreq : int
-        The number of frequency channels in the pulse
-    f_c : float
-        The central frequency of the gaussian
-    f_low : float
-        The lowest frequency (in MHz) of the pulse (eg: 400 MHz for CHIME)
-    f_hi : float
-        The highest frequency (in MHz) of the pulse (eg: 800 MHz for CHIME)
-    fwhm : float
-        The full width at half-maximum for the Gaussian envelope (in MHz)
-    
-    OUTPUT:
-    -------
-
-    gaussian_modulation: numpy array of np.float32
-        Numpy array containing a gaussian profile normalized to an amplitude of 1
-    """
-    freq = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
-    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
-    gaussian_modulation = np.exp(-1 / 2 * ((freq - f_c) / sigma) ** 2)
-    return gaussian_modulation
-
-
-def empirical_spectral_model(nfreq, f_low, f_hi, spindex, running):
-    """
-    Simple function to generate an array which can modulate the
-    spectrum of an injected pulse using the empirical FRB model
-    with spectral index and spectral running from the morphologies
-    working group
-
-    INPUT:
-    ------
-
-    nfreq : int
-        The number of frequency channels in the pulse
-    f_low : float
-        The lowest frequency (in MHz) of the pulse (eg: 400 MHz for CHIME)
-    f_hi : float
-        The highest frequency (in MHz) of the pulse (eg: 800 MHz for CHIME)
-    spindex : float
-        The spectral index of the pulse to be used in the empirical model
-    running : float
-        The spectral running of the pulse to be used in the empirical model
-
-    OUTPUT:
-    -------
-
-    empirical_modulation: numpy array of np.float32
-        Numpy array containing the spectral modulation of the model
-    """
-    freq = np.linspace(f_low, f_hi, nfreq, dtype=np.float32)
-    empirical_modulation = (freq / f_low) ** (spindex + running * np.log(freq / f_low))
-    return empirical_modulation
 
 def make_pulse_plot(pulse, spectral_modulation=None, fn=None):
     """
@@ -234,14 +171,15 @@ def inject_pulse():
     gaussian_fwhm = data["gaussian_fwhm"]
     frb_master_base_url = data["frb_master_base_url"]
     fpga0 = data["timestamp_fpga_injection"]
+    spectral_modulation = data["spectral_modulation"]
     plot = data["plot"]
 
     # Make some basic assertions
     assert (
-        0 < beam_no < 255
-        or 1000 < beam_no < 1255
-        or 2000 < beam_no < 2255
-        or 3000 < beam_no < 3255
+        0 < beam_no < 256
+        or 1000 < beam_no < 1256
+        or 2000 < beam_no < 2256
+        or 3000 < beam_no < 3256
     ), "ERROR: invalid beam_no!"
     t_injection_dt = datetime.strptime(t_injection, "%Y-%m-%dT%H:%M:%S.%fZ")
     assert (
@@ -256,52 +194,6 @@ def inject_pulse():
     pulse = simpulse.single_pulse(
         nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, spindex, t_inf
     )
-
-    if gaussian_central_freq and gaussian_fwhm:
-        # Modulate the frequency spectrum by a gaussian profile
-        log.info("Generating spectral gaussian profile...")
-        gaussian_modulation = gaussian(
-            nfreq, gaussian_central_freq, freq_lo_MHz, freq_hi_MHz, gaussian_fwhm
-        )
-    else:
-        log.info("No gaussian component specified, continuing...")
-        gaussian_modulation = None
-
-    # Retrieve the sensitivities from the beam model and modulate the frequency
-    # spectrum once again
-    # TODO: make date more flexible? What does date even end up changing?
-    if ra and dec:
-        log.info("Retrieving the sensitivity from the beam model...")
-        frb_master_url = frb_master_base_url + "/v1/code/beam-model/get-sensitivity"
-        log.info("frb_master_url: {}".format(frb_master_url))
-        payload = {"ra": ra, "dec": dec, "date": t_injection, "beam": beam_no}
-        resp = requests.post(frb_master_url, json=payload)
-        sensitivities = np.float32(np.array(resp.json()["sensitivities"]))
-        if gaussian_modulation is not None:
-            log.info(
-                "Setting spectral modulation to gaussian profile multiplied by beam model sensitivity..."
-            )
-            spectral_modulation = gaussian_modulation * sensitivities
-        else:
-            log.info(
-                "Setting spectral modulation to the beam model sensitivity at given RA/Dec..."
-            )
-            spectral_modulation = sensitivities
-    else:
-        log.info("RA and/or DEC == 0.0, not applying beam model, continuing...")
-        spectral_modulation = gaussian_modulation
-
-    # Get the tcp server address for the given beam_no from frb-master
-    # log.info("Retrieving rpc_server address for beam {}...".format(beam_no))
-    # frb_master_url = frb_master_base_url + "/v1/parameters/get-beam-info/{}".format(
-    #    beam_no
-    # )
-    # resp = requests.get(frb_master_url)
-    # rpc_server = resp.json()["rpc_server"]
-    # Use the "heavy" rpc port for data injection
-    # if rpc_server.endswith("5555"):
-    #    rpc_server = rpc_server.replace("5555", "5556")
-    # log.info("rpc_server: {}".format(rpc_server))
 
     # Make the request to the RpcClient to inject the pulse at fpga0
     # NOTE: offsetting beam_no by 10000 as that is currently how we verify
