@@ -560,6 +560,7 @@ class RpcClient(object):
         fpga_counts_per_sample=384,
         fpga_period=2.56e-6,
         spectral_modulation=None,
+        conserve_fluence=False,
         **kwargs
     ):
         """
@@ -589,19 +590,23 @@ class RpcClient(object):
             for i, n in enumerate(sparse_n):
                 data.append(sparse_data[ntotal : ntotal + n] * spectral_modulation[i])
                 ntotal += n
-            # Normalize the fluence to the value from simpulse after modulation
-            data_np = np.hstack(data)
-            factor = sp.fluence * sp.pulse_nt * sp.nfreq / data_np.sum()
-            print("Multiplicative factor to conserve fluence: {}".format(factor))
-            for i in range(len(data)):
-                for j in range(len(data[i])):
-                    data[i][j] *= factor
-            data_new_np = np.hstack(data)
-            print(
-                "Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}\nfactor corrected sum: {}".format(
-                    sparse_data.sum(), data_np.sum(), sparse_n, data_new_np.sum()
+            if conserve_fluence:
+                print("Applying fluence conservation factor...")
+                # Normalize the fluence to the value from simpulse after modulation
+                # (Note: Factor of 1 / 1.006 is because, without it, for some reason
+                # fluence ends up systematically 0.6% higher...)
+                data_np = np.hstack(data)
+                factor = sp.fluence * sp.pulse_nt * sp.nfreq * (1 / 1.006) / data_np.sum()
+                print("Multiplicative factor to conserve fluence: {}".format(factor))
+                for i in range(len(data)):
+                    for j in range(len(data[i])):
+                        data[i][j] *= factor
+                data_new_np = np.hstack(data)
+                print(
+                    "Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}\nfactor corrected sum: {}".format(
+                        sparse_data.sum(), data_np.sum(), sparse_n, data_new_np.sum()
+                    )
                 )
-            )
         else:
             print("No spectral modulation given to apply to the pulse...")
             for n in sparse_n:

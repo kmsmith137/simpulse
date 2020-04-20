@@ -173,6 +173,7 @@ def inject_pulse():
     fpga0 = data["timestamp_fpga_injection"]
     spectral_modulation = data["spectral_modulation"]
     plot = data["plot"]
+    conserve_fluence = data["conserve_fluence"]
 
     # Make some basic assertions
     assert (
@@ -208,6 +209,7 @@ def inject_pulse():
         wait=True,
         nfreq=nfreq,
         spectral_modulation=spectral_modulation,
+        conserve_fluence=conserve_fluence,
     )
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
