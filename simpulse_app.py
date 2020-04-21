@@ -49,7 +49,7 @@ plot_dir = "/frb-archiver/frb-injections"
 ####################
 
 
-def make_pulse_plot(pulse, spectral_modulation=None, fn=None):
+def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=None):
     """
     A function to create a plot of the pulse to be injected. The plot
     is created by generating a dedispersed version of the pulse, and
@@ -110,8 +110,11 @@ def make_pulse_plot(pulse, spectral_modulation=None, fn=None):
         new_data = data_cut_copy * spectral_modulation[:, np.newaxis]
         new_sum = new_data.sum()
         # Conserve fluence
-        factor = old_sum / new_sum
-        data_cut = new_data * factor
+        if conserve_fluence:
+            factor = old_sum / new_sum
+            data_cut = new_data * factor
+        else:
+            data_cut = new_data
 
     # Set values for the time series/spectrum
     x_times = np.linspace(min_t, max_t, data_cut.shape[1])
@@ -191,9 +194,11 @@ def inject_pulse():
     dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
 
     # Generate a pulse using simpulse and the specified params
+    # (Note: the value set to 0.0 is for spectral index. I set it to 0 because
+    #  the spectral modulation folds in the spectral index already)
     t_inf = 0
     pulse = simpulse.single_pulse(
-        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, spindex, t_inf
+        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, 0.0, t_inf
     )
 
     # Make the request to the RpcClient to inject the pulse at fpga0
@@ -218,7 +223,7 @@ def inject_pulse():
         fn = os.path.join(
             plot_dir, "injection_{}".format(t_injection_dt.strftime("%Y%m%d_%H%M%S"))
         )
-        make_pulse_plot(pulse, spectral_modulation=spectral_modulation, fn=fn)
+        make_pulse_plot(pulse, spectral_modulation=spectral_modulation, conserve_fluence=conserve_fluence, fn=fn)
         log.info("Plot generated at {}!".format(fn))
     return {"injection": True}
 
