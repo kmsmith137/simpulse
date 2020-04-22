@@ -1,5 +1,6 @@
 # Set non-interactice plotting backend
 import matplotlib
+
 matplotlib.use("Agg")
 
 import click
@@ -101,8 +102,8 @@ def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=
     max_nt = int(max(1024.0 * 6.0 / 10.0, np.where(np.sum(data, axis=0) != 0)[0].max()))
     min_nt = int(1024.0 * 4.0 / 10.0)
     # Reference time to the pulse time, and put in ms
-    max_t = max_nt / 1024. * 1000. - 500.
-    min_t = min_nt / 1024. * 1000. - 500.
+    max_t = max_nt / 1024.0 * 1000.0 - 500.0
+    min_t = min_nt / 1024.0 * 1000.0 - 500.0
     data_cut = data[:, min_nt:max_nt]
     if spectral_modulation is not None:
         old_sum = data_cut.sum()
@@ -223,7 +224,12 @@ def inject_pulse():
         fn = os.path.join(
             plot_dir, "injection_{}".format(t_injection_dt.strftime("%Y%m%d_%H%M%S"))
         )
-        make_pulse_plot(pulse, spectral_modulation=spectral_modulation, conserve_fluence=conserve_fluence, fn=fn)
+        make_pulse_plot(
+            pulse,
+            spectral_modulation=spectral_modulation,
+            conserve_fluence=conserve_fluence,
+            fn=fn,
+        )
         log.info("Plot generated at {}!".format(fn))
     return {"injection": True}
 
