@@ -106,6 +106,7 @@ def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=
     min_t = min_nt / 1024.0 * 1000.0 - 500.0
     data_cut = data[:, min_nt:max_nt]
     if spectral_modulation is not None:
+        spectral_modulation = np.array(spectral_modulation)
         old_sum = data_cut.sum()
         data_cut_copy = data_cut.copy()
         new_data = data_cut_copy * spectral_modulation[:, np.newaxis]
