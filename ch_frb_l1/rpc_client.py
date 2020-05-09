@@ -608,14 +608,7 @@ class RpcClient(object):
                     # Apply beam model (not conserving fluence) if given
                     if beam_model:
                         data[i][j] *= beam_model[i]
-
-            # Apply beam model (not conserving fluence) if given
-            ntotal = 0
-            if beam_model:
-                print("Applying beam model to the pulse...")
-                for i, n in enumerate(sparse_n):
-                    data.append(sparse_data[ntotal : ntotal + n] * beam_model[i])
-                    ntotal += n
+        
         else:
             print("No spectral modulation given to apply to the pulse...")
             for n in sparse_n:
