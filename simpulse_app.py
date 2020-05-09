@@ -50,7 +50,7 @@ plot_dir = "/frb-archiver/frb-injections"
 ####################
 
 
-def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=None):
+def make_pulse_plot(pulse, spectral_model=None, beam_model=None, fn=None):
     """
     A function to create a plot of the pulse to be injected. The plot
     is created by generating a dedispersed version of the pulse, and
@@ -61,8 +61,10 @@ def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=
 
     pulse : simpulse object
         The simpulse object to be injected
-    spectral_modulation : numpy array, optional
+    spectral_model : numpy array, optional
         A numpy array to modulate the spectrum of the pulse. None by default
+    spectral_model : numpy array, optional
+        A numpy array to apply the beam model to the pulse. None by default
     fn : str, optional
         The name of the image to be saved, None by default
     """
@@ -105,18 +107,12 @@ def make_pulse_plot(pulse, spectral_modulation=None, conserve_fluence=False, fn=
     max_t = max_nt / 1024.0 * 1000.0 - 500.0
     min_t = min_nt / 1024.0 * 1000.0 - 500.0
     data_cut = data[:, min_nt:max_nt]
-    if spectral_modulation is not None:
-        spectral_modulation = np.array(spectral_modulation)
-        old_sum = data_cut.sum()
-        data_cut_copy = data_cut.copy()
-        new_data = data_cut_copy * spectral_modulation[:, np.newaxis]
-        new_sum = new_data.sum()
-        # Conserve fluence
-        if conserve_fluence:
-            factor = old_sum / new_sum
-            data_cut = new_data * factor
-        else:
-            data_cut = new_data
+    if spectral_model is not None:
+        spectral_model = np.array(spectral_model)
+        data_cut = data_cut * spectral_model[:, np.newaxis]
+    if beam_model is not None:
+        beam_model = np.array(beam_model)
+        data_cut = data_cut * beam_model[:, np.newaxis]
 
     # Set values for the time series/spectrum
     x_times = np.linspace(min_t, max_t, data_cut.shape[1])
@@ -176,9 +172,9 @@ def inject_pulse():
     gaussian_fwhm = data["gaussian_fwhm"]
     frb_master_base_url = data["frb_master_base_url"]
     fpga0 = data["timestamp_fpga_injection"]
-    spectral_modulation = data["spectral_modulation"]
+    spectral_model = data["spectral_model"]
+    beam_model = data["beam_model"]
     plot = data["plot"]
-    conserve_fluence = data["conserve_fluence"]
 
     # Make some basic assertions
     assert (
@@ -215,8 +211,8 @@ def inject_pulse():
         fpga0,
         wait=True,
         nfreq=nfreq,
-        spectral_modulation=spectral_modulation,
-        conserve_fluence=conserve_fluence,
+        spectral_model=spectral_model,
+        beam_model=beam_model,
     )
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
@@ -227,8 +223,8 @@ def inject_pulse():
         )
         make_pulse_plot(
             pulse,
-            spectral_modulation=spectral_modulation,
-            conserve_fluence=conserve_fluence,
+            spectral_model=spectral_model,
+            beam_model=beam_model,
             fn=fn,
         )
         log.info("Plot generated at {}!".format(fn))

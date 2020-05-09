@@ -559,8 +559,9 @@ class RpcClient(object):
         nfreq=16384,
         fpga_counts_per_sample=384,
         fpga_period=2.56e-6,
-        spectral_modulation=None,
-        conserve_fluence=False,
+        spectral_model=None,
+        beam_model=None,
+        #conserve_fluence=False,
         **kwargs
     ):
         """
@@ -580,33 +581,38 @@ class RpcClient(object):
         sp.add_to_timestream_sparse(sparse_data, sparse_i0, sparse_n, t0, t1x, nt, 1.0)
         # convert sparse_data into a list of numpy arrays (one per freq)
         data = []
-        ntotal = 0
-        if spectral_modulation is not None:
+        if spectral_model is not None:
             print("Applying spectral modulation to the pulse...")
-            if len(spectral_modulation) != nfreq:
+            if len(spectral_model) != nfreq:
                 raise RuntimeError(
-                    "spectral_modulation, if given, must be an array with length nfreq"
+                    "spectral_model, if given, must be an array with length nfreq"
                 )
+            ntotal = 0
             for i, n in enumerate(sparse_n):
-                data.append(sparse_data[ntotal : ntotal + n] * spectral_modulation[i])
+                data.append(sparse_data[ntotal : ntotal + n] * spectral_model[i])
                 ntotal += n
-            if conserve_fluence:
-                print("Applying fluence conservation factor...")
-                # Normalize the fluence to the value from simpulse after modulation
-                # (Note: Factor of 1 / 1.006 is because, without it, for some reason
-                # fluence ends up systematically 0.6% higher...)
-                data_np = np.hstack(data)
-                factor = sp.fluence * sp.pulse_nt * sp.nfreq * (1 / 1.006) / data_np.sum()
-                print("Multiplicative factor to conserve fluence: {}".format(factor))
-                for i in range(len(data)):
-                    for j in range(len(data[i])):
-                        data[i][j] *= factor
-                data_new_np = np.hstack(data)
-                print(
-                    "Sparse data sum: {}\nPost modulation sum: {}\nsparse_n: {}\nfactor corrected sum: {}".format(
-                        sparse_data.sum(), data_np.sum(), sparse_n, data_new_np.sum()
-                    )
-                )
+        
+            # NOTE: assuming now that fluence is conserved across intrinsic spectral
+            # modulation and then not conserved across beam model
+            # if conserve_fluence:
+            print("Applying fluence conservation factor...")
+            
+            # Normalize the fluence to the value from simpulse after modulation
+            data_np = np.hstack(data)
+            t_chunk_s = 0.983 * 1.024 # in s
+            factor = sp.fluence * sp.pulse_nt * sp.nfreq * (1 / t_chunk_s) / data_np.sum()
+            print("Multiplicative factor to conserve fluence: {}".format(factor))
+            for i in range(len(data)):
+                for j in range(len(data[i])):
+                    data[i][j] *= factor
+
+            # Apply beam model (not conserving fluence) if given
+            ntotal = 0
+            if beam_model:
+                print("Applying beam model to the pulse...")
+                for i, n in enumerate(sparse_n):
+                    data.append(sparse_data[ntotal : ntotal + n] * beam_model[i])
+                    ntotal += n
         else:
             print("No spectral modulation given to apply to the pulse...")
             for n in sparse_n:
