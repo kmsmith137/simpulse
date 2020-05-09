@@ -605,6 +605,9 @@ class RpcClient(object):
             for i in range(len(data)):
                 for j in range(len(data[i])):
                     data[i][j] *= factor
+                    # Apply beam model (not conserving fluence) if given
+                    if beam_model:
+                        data[i][j] *= beam_model[i]
 
             # Apply beam model (not conserving fluence) if given
             ntotal = 0
