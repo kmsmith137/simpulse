@@ -224,7 +224,7 @@ def inject_pulse():
         make_pulse_plot(
             pulse, spectral_model=spectral_model, beam_model=beam_model, fn=fn,
         )
-        log.info("Plot generated at {}!".format(fn))
+        log.info("Plot generated at {}.png!".format(fn))
     return {"injection": True}
 
 
