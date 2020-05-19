@@ -561,7 +561,7 @@ class RpcClient(object):
         fpga_period=2.56e-6,
         spectral_model=None,
         beam_model=None,
-        #conserve_fluence=False,
+        # conserve_fluence=False,
         **kwargs
     ):
         """
@@ -583,32 +583,23 @@ class RpcClient(object):
         data = []
         if spectral_model is not None:
             print("Applying spectral modulation to the pulse...")
-            if len(spectral_model) != nfreq:
+            if len(spectral_model) != nfreq or len(beam_model) != nfreq:
                 raise RuntimeError(
-                    "spectral_model, if given, must be an array with length nfreq"
+                    "spectral modifications, if given, must be arrays with length nfreq"
                 )
+
             ntotal = 0
             for i, n in enumerate(sparse_n):
-                data.append(sparse_data[ntotal : ntotal + n] * spectral_model[i])
+                # NOTE: spectral_model is the intrinsic spectral model of the burst.
+                # It is assumed to conserve fluence, so whether or not the spectral
+                # model is applied the total sum of numbers going into the data stream
+                # would be the same. The beam model, however, does not conserve fluence
+                # as it lowers the sensitivity with which a burst is detected
+                data.append(
+                    sparse_data[ntotal : ntotal + n] * spectral_model[i] * beam_model[i]
+                )
                 ntotal += n
-        
-            # NOTE: assuming now that fluence is conserved across intrinsic spectral
-            # modulation and then not conserved across beam model
-            # if conserve_fluence:
-            print("Applying fluence conservation factor...")
-            
-            # Normalize the fluence to the value from simpulse after modulation
-            data_np = np.hstack(data)
-            t_chunk_s = 0.983 * 1.024 # in s
-            factor = sp.fluence * sp.pulse_nt * sp.nfreq * (1 / t_chunk_s) / data_np.sum()
-            print("Multiplicative factor to conserve fluence: {}".format(factor))
-            for i in range(len(data)):
-                for j in range(len(data[i])):
-                    data[i][j] *= factor
-                    # Apply beam model (not conserving fluence) if given
-                    if beam_model:
-                        data[i][j] *= beam_model[i]
-        
+
         else:
             print("No spectral modulation given to apply to the pulse...")
             for n in sparse_n:

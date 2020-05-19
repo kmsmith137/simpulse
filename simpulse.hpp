@@ -35,7 +35,7 @@ inline double dispersion_delay(double dm, double freq_MHz)
 // We define the 'SM' to be the scattering time in _milliseconds_ (not seconds) at 1 GHz
 inline double scattering_time(double sm, double freq_MHz)
 {
-    return 1.0e-3 * sm / pow(freq_MHz/1000.0, 4.4);
+    return 1.0e-3 * sm / pow(freq_MHz/1000.0, 4.0);
 }
 
 

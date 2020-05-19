@@ -222,10 +222,7 @@ def inject_pulse():
             plot_dir, "injection_{}".format(t_injection_dt.strftime("%Y%m%d_%H%M%S"))
         )
         make_pulse_plot(
-            pulse,
-            spectral_model=spectral_model,
-            beam_model=beam_model,
-            fn=fn,
+            pulse, spectral_model=spectral_model, beam_model=beam_model, fn=fn,
         )
         log.info("Plot generated at {}!".format(fn))
     return {"injection": True}
