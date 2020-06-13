@@ -162,9 +162,13 @@ def inject_pulse():
     dec = data["dec"]
     beam_no = data["beam_no"]
     dm = data["dm"]
-    sm = data["tau_1_ghz"]
-    width = data["pulse_width_ms"] / 1000.0
-    fluence = data["fluence"]
+    sm = data["tau_1_ghz_ms"]
+    pulse_width_ms = data["pulse_width_ms"]
+    # Simpulse expects width in s
+    pulse_width_s = pulse_width_ms / 1000.
+    fluence_jy_ms = data["fluence_jy_ms"]
+    # Simpulse expects fluence in (units) s
+    fluence_jy_s = fluence_jy_ms / 1000.
     spindex = data["spindex"]
     running = data["running"]
     t_injection = data["injection_time"]
@@ -196,7 +200,7 @@ def inject_pulse():
     #  the spectral modulation folds in the spectral index already)
     t_inf = 0
     pulse = simpulse.single_pulse(
-        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, width, fluence, 0.0, t_inf
+        nt, nfreq, freq_lo_MHz, freq_hi_MHz, dm, sm, pulse_width_s, fluence_jy_s, 0.0, t_inf
     )
 
     # Make the request to the RpcClient to inject the pulse at fpga0
@@ -206,7 +210,7 @@ def inject_pulse():
     log.info("Injecting into beam {}...".format(beam_no_offset))
     log.info("Mean of beam_model: {}".format(np.mean(beam_model)))
     log.info("Sum of spectral model: {}".format(np.sum(spectral_model)))
-    log.debug("Pulse argument: {}".format(pulse))
+    log.info("Simpulse pulse: {}".format(pulse))
     resp = client.inject_single_pulse(
         beam_no_offset,
         pulse,
