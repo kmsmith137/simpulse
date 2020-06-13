@@ -163,7 +163,7 @@ def inject_pulse():
     beam_no = data["beam_no"]
     dm = data["dm"]
     sm = data["tau_1_ghz"]
-    width = data["pulse_width_ms"] / 1000.
+    width = data["pulse_width_ms"] / 1000.0
     fluence = data["fluence"]
     spindex = data["spindex"]
     running = data["running"]
