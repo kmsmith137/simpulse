@@ -207,15 +207,14 @@ def inject_pulse():
     log.info("Mean of beam_model: {}".format(np.mean(beam_model)))
     log.info("Sum of spectral model: {}".format(np.sum(spectral_model)))
     log.debug("Pulse argument: {}".format(pulse))
-    spectral_modulation = np.array(beam_model) * np.array(spectral_model)
-    spectral_modulation = spectral_modulation.tolist()
     resp = client.inject_single_pulse(
         beam_no_offset,
         pulse,
         fpga0,
         wait=True,
         nfreq=nfreq,
-        spectral_modulation=spectral_modulation,
+        spectral_model=spectral_model,
+        beam_model=beam_model,
     )
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")
