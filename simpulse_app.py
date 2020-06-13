@@ -163,7 +163,7 @@ def inject_pulse():
     beam_no = data["beam_no"]
     dm = data["dm"]
     sm = data["tau_1_ghz"]
-    width = data["pulse_width_ms"] / 1000
+    width = data["pulse_width_ms"] / 1000.
     fluence = data["fluence"]
     spindex = data["spindex"]
     running = data["running"]
@@ -204,15 +204,18 @@ def inject_pulse():
     # injection beams
     beam_no_offset = beam_no + 10000
     log.info("Injecting into beam {}...".format(beam_no_offset))
+    log.info("Mean of beam_model: {}".format(np.mean(beam_model)))
+    log.info("Sum of spectral model: {}".format(np.sum(spectral_model)))
     log.debug("Pulse argument: {}".format(pulse))
+    spectral_modulation = np.array(beam_model) * np.array(spectral_model)
+    spectral_modulation = spectral_modulation.tolist()
     resp = client.inject_single_pulse(
         beam_no_offset,
         pulse,
         fpga0,
         wait=True,
         nfreq=nfreq,
-        spectral_model=spectral_model,
-        beam_model=beam_model,
+        spectral_modulation=spectral_modulation,
     )
     log.info("Inject single pulse response: {}".format(resp))
     log.info("Injection completed!")

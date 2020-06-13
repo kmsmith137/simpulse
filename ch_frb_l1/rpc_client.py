@@ -605,6 +605,7 @@ class RpcClient(object):
             for n in sparse_n:
                 data.append(sparse_data[ntotal : ntotal + n])
                 ntotal += n
+        print("Data sum: {}".format(np.sum(data)))
         fpga_offset = int(fpga0 + (t0 / fpga_period))
         injdata = InjectData(beam, 0, fpga_offset, sparse_i0, data)
         # Simpulse orders frequencies low to high.
