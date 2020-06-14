@@ -575,6 +575,7 @@ class RpcClient(object):
         t1x = t0 + nt * sample_period
         nsparse = sp.get_n_sparse(t0, t1x, nt)
         print("Pulse time range:", t0, t1x, "NT", nt, "N sparse:", nsparse)
+        print("Spectral model length: {} beam model length: {}"
         sparse_data = np.zeros(nsparse, np.float32)
         sparse_i0 = np.zeros(nfreq, np.int32)
         sparse_n = np.zeros(nfreq, np.int32)
@@ -607,7 +608,7 @@ class RpcClient(object):
                 ntotal += n
         print("Spectral model sum: {}".format(np.sum(spectral_model)))
         print("Band averaged beam sensitivity: {}".format(np.mean(beam_model)))
-        print("Data sum: {}".format(np.sum(data)))
+        print("Data sum: {}".format(np.sum(np.hstack(data))))
         fpga_offset = int(fpga0 + (t0 / fpga_period))
         injdata = InjectData(beam, 0, fpga_offset, sparse_i0, data)
         # Simpulse orders frequencies low to high.
