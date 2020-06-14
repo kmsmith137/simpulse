@@ -575,7 +575,6 @@ class RpcClient(object):
         t1x = t0 + nt * sample_period
         nsparse = sp.get_n_sparse(t0, t1x, nt)
         print("Pulse time range:", t0, t1x, "NT", nt, "N sparse:", nsparse)
-        print("Spectral model length: {} beam model length: {}"
         sparse_data = np.zeros(nsparse, np.float32)
         sparse_i0 = np.zeros(nfreq, np.int32)
         sparse_n = np.zeros(nfreq, np.int32)
