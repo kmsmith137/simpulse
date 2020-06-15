@@ -166,6 +166,9 @@ def inject_pulse():
     pulse_width_ms = data["pulse_width_ms"]
     # Simpulse expects width in s
     pulse_width_s = pulse_width_ms / 1000.0
+    # The input width to the injection system is the FWHM, but simpulse takes
+    # the Gaussian sigma as the width, so divide by the appropraite factor
+    pulse_width_s = pulse_width_s / (2. * np.sqrt(2 * np.log(2)))
     fluence_jy_ms = data["fluence_jy_ms"]
     # Simpulse expects fluence in (units) s
     fluence_jy_s = fluence_jy_ms / 1000.0
