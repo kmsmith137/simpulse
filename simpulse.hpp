@@ -28,7 +28,7 @@ namespace simpulse {
 // The 'DM' parameter is the dispersion measure in its standard units (pc cm^{-3})
 inline double dispersion_delay(double dm, double freq_MHz)
 {
-    return 4.148806e3 * dm / (freq_MHz * freq_MHz);
+    return (1.0 / 2.41e-4) * dm / (freq_MHz * freq_MHz);
 }
 
 // Returns scattering time in seconds
