@@ -42,7 +42,7 @@ servers = {"injections": "tcp://10.8.210.16:5556"}
 client = RpcClient(servers=servers)
 
 # Set the location to save plots
-plot_dir = "/frb-archiver/frb-injections"
+plot_dir = "/intensity-data/processed/frb-injections"
 
 
 ####################
