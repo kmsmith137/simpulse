@@ -153,6 +153,7 @@ def make_pulse_plot(pulse, spectral_model=None, beam_model=None, fn=None):
 def inject_pulse():
     log.info("Beginning generate_pulse routine...")
     # Unpack the data from the injection service
+    log.info("Unpacking data from mimic request...")
     data = request.get_json()
     nt = data["nt"]
     nfreq = data["nfreq"]
@@ -182,18 +183,23 @@ def inject_pulse():
     spectral_model = data["spectral_model"]
     beam_model = data["beam_model"]
     plot = data["plot"]
+    log.info("Data successfully unpacked!\n")
 
     # Make some basic assertions
+    log.info("Asserting beam number is valid...")
     assert (
         0 < beam_no < 256
         or 1000 < beam_no < 1256
         or 2000 < beam_no < 2256
         or 3000 < beam_no < 3256
     ), "ERROR: invalid beam_no!"
+    log.info("Beam number is valid!\n")
+    log.info("Asserting injection time is not in the past...")
     t_injection_dt = datetime.strptime(t_injection, "%Y-%m-%dT%H:%M:%S.%fZ")
     assert (
         t_injection_dt > datetime.utcnow()
     ), "ERROR: t_injection must not be in the past!"
+    log.info("Injection time is not in the past!")
 
     # Seconds per DM unit of delay (across the frequency band)
     dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
@@ -202,6 +208,7 @@ def inject_pulse():
     # (Note: the value set to 0.0 is for spectral index. I set it to 0 because
     #  the spectral modulation folds in the spectral index already)
     t_inf = 0
+    log.info("Generating pulse with simpulse...")
     pulse = simpulse.single_pulse(
         nt,
         nfreq,
@@ -214,6 +221,7 @@ def inject_pulse():
         0.0,
         t_inf,
     )
+    log.info("Successfully generated pulse!")
 
     # Make the request to the RpcClient to inject the pulse at fpga0
     # NOTE: offsetting beam_no by 10000 as that is currently how we verify
