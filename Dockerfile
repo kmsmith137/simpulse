@@ -15,7 +15,7 @@ WORKDIR /simpulse
 RUN set -ex \
     && apt-get update \
     && apt-get install -y build-essential git cmake autoconf \
-    libtool pkg-config fftw-dev libfftw3-dev tk \
+    libtool pkg-config fftw-dev libfftw3-dev \
     && pip install --no-cache-dir -r requirements.txt \
     && make install \
     && rm -rf \
