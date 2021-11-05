@@ -3,13 +3,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import click
 from datetime import datetime
-import json
 import logging
 import os
-import requests
-import time
 from flask import Flask, request
 
 import matplotlib.pyplot as plt
@@ -28,10 +24,6 @@ logging_format += "%(message)s"
 # Configure Logging
 logging.basicConfig(format=logging_format, level=logging.DEBUG)
 log = logging.getLogger()
-
-# Define the dispersion constant used for pulsar studies (Manchester & Taylor 1972)
-# NOTE: should probably this import from frb_common, but want to keep container light
-k_DM = 1.0 / 2.41e-4
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -155,15 +147,13 @@ def inject_pulse():
     # Unpack the data from the injection service
     log.info("Unpacking data from mimic request...")
     data = request.get_json()
-    nt = data["nt"]
+    nt_per_sample = data["nt_per_sample"]
     nfreq = data["nfreq"]
     freq_lo_MHz = data["freq_lo_MHz"]
     freq_hi_MHz = data["freq_hi_MHz"]
-    ra = data["ra"]
-    dec = data["dec"]
     beam_no = data["beam_no"]
     dm = data["dm"]
-    sm = data["tau_1_ghz_ms"]
+    tau_1_ghz_ms = data["tau_1_ghz_ms"]
     pulse_width_ms = data["pulse_width_ms"]
     # Simpulse expects width in s
     pulse_width_s = pulse_width_ms / 1000.0
@@ -173,12 +163,7 @@ def inject_pulse():
     fluence_jy_ms = data["fluence_jy_ms"]
     # Simpulse expects fluence in (units) s
     fluence_jy_s = fluence_jy_ms / 1000.0
-    spindex = data["spindex"]
-    running = data["running"]
     t_injection = data["injection_time"]
-    gaussian_central_freq = data["gaussian_central_freq"]
-    gaussian_fwhm = data["gaussian_fwhm"]
-    frb_master_base_url = data["frb_master_base_url"]
     fpga0 = data["timestamp_fpga_injection"]
     spectral_model = data["spectral_model"]
     beam_model = data["beam_model"]
@@ -201,21 +186,18 @@ def inject_pulse():
     ), "ERROR: t_injection must not be in the past!"
     log.info("Injection time is not in the past!")
 
-    # Seconds per DM unit of delay (across the frequency band)
-    dmdt = k_DM * (1 / freq_lo_MHz ** 2 - 1 / freq_hi_MHz ** 2)
-
     # Generate a pulse using simpulse and the specified params
     # (Note: the value set to 0.0 is for spectral index. I set it to 0 because
-    #  the spectral modulation folds in the spectral index already)
+    # the spectral modulation folds in the spectral index already)
     t_inf = 0
     log.info("Generating pulse with simpulse...")
     pulse = simpulse.single_pulse(
-        nt,
+        nt_per_sample,
         nfreq,
         freq_lo_MHz,
         freq_hi_MHz,
         dm,
-        sm,
+        tau_1_ghz_ms,
         pulse_width_s,
         fluence_jy_s,
         0.0,
