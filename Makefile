@@ -1,4 +1,4 @@
-# Makefile.local must define the following variables
+# Makefile.docker must define the following variables
 #   LIBDIR      install dir for C++ libraries
 #   INCDIR      install dir for C++ headers
 #   PYDIR       install dir for python/cython modules
@@ -13,24 +13,24 @@
 #   print distutils.sysconfig.get_python_inc()    # python includes
 #   print numpy.get_include()                     # numpy includes
 #
-# See site/Makefile.local.* for examples.
+# See site/Makefile.docker.* for examples.
 
-include Makefile.local
+include Makefile.docker
 
 ifndef CPP
-$(error Fatal: Makefile.local must define CPP variable)
+$(error Fatal: Makefile.docker must define CPP variable)
 endif
 
 ifndef INCDIR
-$(error Fatal: Makefile.local must define INCDIR variable)
+$(error Fatal: Makefile.docker must define INCDIR variable)
 endif
 
 ifndef LIBDIR
-$(error Fatal: Makefile.local must define LIBDIR variable)
+$(error Fatal: Makefile.docker must define LIBDIR variable)
 endif
 
 ifndef PYDIR
-$(error Fatal: Makefile.local must define PYDIR variable)
+$(error Fatal: Makefile.docker must define PYDIR variable)
 endif
 
 

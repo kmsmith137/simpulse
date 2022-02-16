@@ -9,14 +9,16 @@ INCDIR=/usr/include
 
 # Directory where Python modules will be installed
 # Don't forget to add $(PYDIR) to your PYTHONPATH environment variable
-PYDIR=/home/marcus/miniconda3/lib/python3.8/site-packages/
+PYDIR=/usr/local/lib/python3.6/site-packages/
 
 # Read-only location of python header files, needed for cython
-# Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc()
-PYTHON_INCDIR=/home/marcus/miniconda3/include/python3.8
+# Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc() <- eventually want to update
+# PYTHON_INCDIR=/usr/local/include/python3.9
+PYTHON_INCDIR=/usr/local/include/python3.6m
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
-NUMPY_INCDIR=/home/marcus/miniconda3/lib/python3.8/site-packages/numpy/core/include
+# NUMPY_INCDIR=/usr/local/lib/python3.9/site-packages/numpy/core/include <- eventually want to update
+NUMPY_INCDIR=/usr/local/lib/python3.6/site-packages/numpy/core/include
 
 # C++ command line
 # Must support c++11
