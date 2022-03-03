@@ -201,7 +201,6 @@ inline void _add_pulse_to_frequency_channel(const single_pulse &sp, T *out, doub
     }
 }
 
-
 template<typename T>
 void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const
 {
@@ -227,6 +226,100 @@ void single_pulse::add_to_timestream(T *out, double out_t0, double out_t1, int o
 template void single_pulse::add_to_timestream(float *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
 template void single_pulse::add_to_timestream(double *out, double out_t0, double out_t1, int out_nt, int stride, double weight) const;
 
+
+inline void _get_pulse_n_samples(const single_pulse &sp, int* sparse_i0, int* sparse_n, double out_t0, double out_t1, int out_nt, int ifreq) {
+    simpulse_assert(out_nt > 0);
+    simpulse_assert(out_t0 < out_t1);
+    simpulse_assert(ifreq >= 0 && ifreq < sp.nfreq);
+
+    double out_dt = (out_t1 - out_t0) / out_nt;
+
+    // Find output sample range containing the pulse
+    double pulse_t0 = sp.undispersed_arrival_time + sp.pulse_t0[ifreq];
+    double pulse_t1 = sp.undispersed_arrival_time + sp.pulse_t1[ifreq];
+
+    if ((pulse_t0 > out_t1) || (pulse_t1 < out_t0)) {
+        *sparse_i0 = 0;
+        *sparse_n  = 0;
+        return;
+    }
+    
+    double out_i0_f = (pulse_t0 - out_t0) / out_dt;
+    double out_i1_f = (pulse_t1 - out_t0) / out_dt;
+    // clip both to [0,nt]
+    int out_i0 = int(floor(out_i0_f));
+    int out_i1 = int(ceil(out_i1_f));
+    out_i0 = std::min(out_nt, std::max(0, out_i0));
+    out_i1 = std::min(out_nt, std::max(0, out_i1));
+
+    *sparse_i0 = out_i0;
+    *sparse_n = out_i1 - out_i0;
+}
+
+template<typename T>
+inline void _add_pulse_to_frequency_channel_sparse(const single_pulse &sp, T *out, int* sparse_i0, int* sparse_n, double out_t0, double out_t1, int out_nt, int ifreq, double weight)
+{
+    simpulse_assert(out);
+    simpulse_assert(out_nt > 0);
+    simpulse_assert(out_t0 < out_t1);
+    simpulse_assert(ifreq >= 0 && ifreq < sp.nfreq);
+
+    double out_dt = (out_t1 - out_t0) / out_nt;
+    _get_pulse_n_samples(sp, sparse_i0, sparse_n, out_t0, out_t1, out_nt, ifreq);
+    if (*sparse_n == 0)
+        return;
+
+    double ot0 = out_t0 +  *sparse_i0              * out_dt;
+    double ot1 = out_t0 + (*sparse_i0 + *sparse_n) * out_dt;
+    _add_pulse_to_frequency_channel(sp, out, ot0, ot1, *sparse_n, ifreq, weight);
+}
+
+template<typename T>
+void single_pulse::add_to_timestream_sparse(T *out, int* sparse_t0, int* sparse_nt, double out_t0, double out_t1, int out_nt, double weight) const
+{
+    simpulse_assert(out);
+    simpulse_assert(out_nt > 0);
+    simpulse_assert(out_t0 < out_t1);
+
+    // ini to empty pulse
+    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+        sparse_t0[ifreq] = 0;
+        sparse_nt[ifreq] = 0;
+    }
+    
+    // Return early if data does not overlap pulse
+    if (out_t0 > undispersed_arrival_time + max_t1)
+	return;
+    if (out_t1 < undispersed_arrival_time + min_t0)
+	return;
+
+    int ntotal = 0;
+    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+        int nt = 0;
+	_add_pulse_to_frequency_channel_sparse(*this, out + ntotal, sparse_t0 + ifreq, &nt, out_t0, out_t1, out_nt, ifreq, weight);
+        sparse_nt[ifreq] = nt;
+        ntotal += nt;
+    }
+}
+
+// Instantiate template for T=float and T=double
+template void single_pulse::add_to_timestream_sparse(float *out, int *out_i0, int *out_n, double out_t0, double out_t1, int out_nt, double weight) const;
+template void single_pulse::add_to_timestream_sparse(double *out, int *out_i0, int *out_n, double out_t0, double out_t1, int out_nt, double weight) const;
+
+int single_pulse::get_n_sparse(double out_t0, double out_t1, int out_nt) const {
+    if (out_t0 > undispersed_arrival_time + max_t1)
+	return 0;
+    if (out_t1 < undispersed_arrival_time + min_t0)
+	return 0;
+    int ntotal = 0;
+    for (int ifreq = 0; ifreq < nfreq; ifreq++) {
+        int i0;
+        int snt;
+        _get_pulse_n_samples(*this, &i0, &snt, out_t0, out_t1, out_nt, ifreq);
+        ntotal += snt;
+    }
+    return ntotal;
+}
 
 double single_pulse::get_signal_to_noise(double sample_dt, double sample_rms, double sample_t0) const
 {
