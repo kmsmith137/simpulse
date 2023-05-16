@@ -13,8 +13,8 @@ PYDIR=/usr/local/lib/python3.6/site-packages/
 
 # Read-only location of python header files, needed for cython
 # Hint for PYTHON_INCDIR: import distutils.sysconfig; distutils.sysconfig.get_python_inc() <- eventually want to update
-# PYTHON_INCDIR=/usr/local/include/python3.9
-PYTHON_INCDIR=/usr/include/python3.6
+PYTHON_INCDIR1=/usr/local/include/python3.9
+PYTHON_INCDIR2=/usr/include/python3.6
 
 # Hint for NUMPY_INCDIR: import numpy; numpy.get_include()
 # NUMPY_INCDIR=/usr/local/lib/python3.9/site-packages/numpy/core/include <- eventually want to update
@@ -25,4 +25,4 @@ NUMPY_INCDIR=/usr/local/lib/python3.6/site-packages/numpy/core/include
 # Don't forget to add . and $(LIBDIR) in your LD_LIBRARY_PATH environment variable (in this order)
 # The -Wno-strict-aliasing flag suppresses some superfluous cython-related gcc warnings
 
-CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)
+CPP=g++ -std=c++11 -fPIC -Wall -Wno-strict-aliasing -O3 -march=native -ffast-math -funroll-loops -I. -I$(INCDIR) -I$(PYTHON_INCDIR1) -I$(PYTHON_INCDIR2) -I$(NUMPY_INCDIR) -L. -L$(LIBDIR)
