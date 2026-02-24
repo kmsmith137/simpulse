@@ -12,6 +12,11 @@
 #error "This source file needs to be compiled with C++0x support (g++ -std=c++0x)"
 #endif
 
+#include "Python.h"
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
+#undef I
+
 #include <iostream>
 #include <string>
 #include <vector>

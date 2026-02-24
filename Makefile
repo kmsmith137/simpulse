@@ -58,7 +58,7 @@ libsimpulse.so: constant_acceleration_phase_model.o single_pulse.o von_mises_pro
 	$(CPP) $(CPP_LFLAGS) -o $@ -shared $^ -lfftw3
 
 cython/simpulse.cpp: cython/simpulse.pyx cython/simpulse_pxd.pxd cython/simpulse_cython.hpp simpulse.hpp
-	cython --cplus $<
+	cython --cplus --3str $(CYTHON_FLAGS) $<
 
 cython/simpulse.so: cython/simpulse.cpp libsimpulse.so
 	$(CPP) $(CPP_LFLAGS) -Wno-unused-function -shared -o $@ $< -lsimpulse $(LIBS_PYMODULE)

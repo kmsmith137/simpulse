@@ -62,7 +62,7 @@ def make_plot(sp, ifreq_list, color_list, label_list, filename):
     plt.legend(loc='upper right').draw_frame(False)
     plt.savefig(filename)
     plt.clf()
-    print 'wrote', filename
+    print('wrote', filename)
 
 def plot1():
     """
